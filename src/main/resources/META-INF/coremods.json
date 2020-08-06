@@ -1,0 +1,9 @@
+{
+  "worldparallel": "trans/worldparallel.js",
+  "entityparallel": "trans/entityparallel.js",
+  "envparallel": "trans/envparallel.js",
+  "teparallel": "trans/teparallel.js",
+  "generalparallel": "trans/general/generalparallel.js",
+  "gen2parallel": "trans/general/gen2parallel.js",
+  "debugnote": "trans/client/debugnote.js"
+}

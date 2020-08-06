@@ -1,0 +1,78 @@
+# Build Directories #
+#####################
+# Directories with built content - not needed
+/bin
+/build
+
+# Gradle #
+##########
+# Ignores all gradle files
+/.gradle
+
+# Git Stuff #
+#############
+# Removes strange git stuff such as temporary markdown previews.
+/.README.md.html
+
+# Eclipse #
+###########
+# Project configuration should be handled by gradle
+# USE gradle:
+.project
+.classpath
+/.settings
+
+# Idea #
+########
+# Idea project config
+# Idea users should target the project as a gradle project
+*.iml
+/.idea
+
+# Java #
+########
+# Error files
+hs_err_pid*.log
+replay_pid*.log
+*.class
+
+# File Changes#
+###############
+# Hides files that have been renamed
+# And backups of files
+*.old
+/*.old
+*.bak
+/*.bak
+
+# FORGE GRADLE DEFAULTS #
+#########################
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+
+# Files from Forge MDK
+forge*changelog.txt
+
+# OTHER STUFF #
+###############
+# TODO
