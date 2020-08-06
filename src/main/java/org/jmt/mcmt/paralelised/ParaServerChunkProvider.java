@@ -25,7 +25,12 @@ import net.minecraft.world.gen.feature.template.TemplateManager;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraft.world.storage.DimensionSavedDataManager;
+
+// 1.16.1
 import net.minecraft.world.storage.SaveFormat.LevelSave;
+
+// 1.15.2
+//import java.io.File;
 
 public class ParaServerChunkProvider extends ServerChunkProvider {
 
