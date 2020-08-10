@@ -70,7 +70,8 @@ The resulting jar will be present in `./build/libs/`
 
 ## TODO LIST
 
-- Add config for specifying classes/packages that can/cant multithread
+- Add config/api for specifying classes/packages that can/cant multithread
+- ~~Make ServerWorld.entitiesById not FastUtil Based (can cause issue with WorldEntitySpawner.func_234964_a_ via SCP.func_217220_m)~~ Done (I think)
 - Parallelise more stuff
 - Hack the planet
 - Document everything so it's reproducable

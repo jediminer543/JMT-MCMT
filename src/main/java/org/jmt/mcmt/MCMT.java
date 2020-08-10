@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.commands.ToggleCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 
@@ -44,7 +45,7 @@ public class MCMT
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
         
-        ToggleCommand.runDataThread();
+        StatsCommand.runDataThread();
         
         ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.CLIENT, GeneralConfig.GENERAL_SPEC);
     }
@@ -71,6 +72,7 @@ public class MCMT
         LOGGER.info("HELLO from server starting");
         CommandDispatcher<CommandSource> commandDispatcher = event.getServer().getCommandManager().getDispatcher();
         ToggleCommand.register(commandDispatcher);
+        StatsCommand.resetAll();
     }
 
     @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)

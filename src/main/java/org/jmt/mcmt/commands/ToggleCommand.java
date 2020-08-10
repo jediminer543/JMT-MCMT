@@ -1,8 +1,5 @@
 package org.jmt.mcmt.commands;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jmt.mcmt.asmdest.ASMHookTerminator;
 import org.jmt.mcmt.config.GeneralConfig;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -18,7 +15,7 @@ public class ToggleCommand {
 		LiteralArgumentBuilder<CommandSource> mcmtconfig = Commands.literal("mcmt");
 		mcmtconfig = mcmtconfig.then(registerConfig(Commands.literal("config")));
 		mcmtconfig = mcmtconfig.then(DebugCommands.registerDebug(Commands.literal("debug")));
-		mcmtconfig = registerStatus(mcmtconfig);
+		mcmtconfig = StatsCommand.registerStatus(mcmtconfig);
 		dispatcher.register(mcmtconfig);
 	}
 
@@ -86,71 +83,6 @@ public class ToggleCommand {
 			cmdCtx.getSource().sendFeedback(message, true);
 			return 1;
 		}));
-	}
-
-	public static LiteralArgumentBuilder<CommandSource> registerStatus(LiteralArgumentBuilder<CommandSource> root) {
-		return root.then(Commands.literal("status").then(Commands.literal("reset").executes(cmdCtx -> {
-			reset = true;
-			return 1;
-		})).executes(cmdCtx -> {
-			StringBuilder messageString = new StringBuilder("Current max threads " + maxThreads + " (");
-			messageString.append("World:" + maxWorlds);
-			messageString.append(" Entity:" + maxEntities);
-			messageString.append(" TE:" + maxTEs);
-			messageString.append(" Env:" + maxEnvs + ")");
-			StringTextComponent message = new StringTextComponent(messageString.toString());
-			cmdCtx.getSource().sendFeedback(message, true);
-			return 1;
-		}));
-	}
-
-	static boolean reset = false;
-	static int maxThreads = 0;
-	static int maxWorlds = 0;
-	static int maxTEs = 0;
-	static int maxEntities = 0;
-	static int maxEnvs = 0;
-	static Thread countingThread;
-	
-	static int warnLog = 0;
-	
-	static Logger mtlog = LogManager.getLogger("MCMT Dev Warning");
-
-	public static void runDataThread() {
-		countingThread = new Thread(() -> {
-			while (true) {
-				try {
-					while (true) {
-						try {
-							Thread.sleep(10);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						if (reset) {
-							maxWorlds = 0;
-							maxTEs = 0;
-							maxEntities = 0;
-							maxEnvs = 0;
-						}
-						maxWorlds = Math.max(maxWorlds, ASMHookTerminator.currentWorlds.get());
-						maxTEs = Math.max(maxTEs, ASMHookTerminator.currentTEs.get());
-						maxEntities = Math.max(maxEntities, ASMHookTerminator.currentEnts.get());
-						maxEnvs = Math.max(maxEnvs, ASMHookTerminator.currentEnvs.get());
-						reset = false;
-						maxThreads = maxWorlds + maxTEs + maxEntities + maxEnvs;
-						
-						warnLog++;
-						if (warnLog % 15000 == 0) {
-							mtlog.warn("MCMT is enabled; error logs are invalid for any other mods");
-						}
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		countingThread.setDaemon(true);
-		countingThread.start();
 	}
 
 }
