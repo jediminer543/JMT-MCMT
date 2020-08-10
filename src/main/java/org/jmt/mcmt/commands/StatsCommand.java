@@ -32,10 +32,18 @@ public class StatsCommand {
 			StringTextComponent message = new StringTextComponent(messageString.toString());
 			cmdCtx.getSource().sendFeedback(message, true);
 			return 1;
-		}).then(Commands.literal("startlog").executes(cmdCtx -> {
+		}).then(Commands.literal("startlog").requires(cmdSrc -> {
+			return cmdSrc.hasPermissionLevel(2);
+		}).executes(cmdCtx -> {
 			doLogging = true;
+			StringTextComponent message = new StringTextComponent("Logging started!");
+			cmdCtx.getSource().sendFeedback(message, true);
 			return 1;
-		})).then(Commands.literal("stoplog").executes(cmdCtx -> {
+		})).then(Commands.literal("stoplog").requires(cmdSrc -> {
+			return cmdSrc.hasPermissionLevel(2);
+		}).executes(cmdCtx -> {
+			StringTextComponent message = new StringTextComponent("Logging stopping...");
+			cmdCtx.getSource().sendFeedback(message, true);
 			doLogging = false;
 			return 1;
 		})));
