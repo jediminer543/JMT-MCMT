@@ -368,7 +368,8 @@ function initializeCoreMod() {
             				valTgt.owner = replace;
             				valTgt.desc = valTgt.desc.replace(valuesTgt, valuesReplace);
             				itrTgt.owner = valuesReplace;
-            				itrTgt.desc = itrTgt.desc.replace(itrTgt, itrRep);
+            				itrTgt.desc = itrTgt.desc.replace(itrTgtDesc, itrRep);
+            				printInsnNode(itrTgt);
             				
             				return true;
             			}
