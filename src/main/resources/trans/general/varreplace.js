@@ -43,6 +43,55 @@ function getFieldAccessAfter(methodNode, opcode, owner, name, descriptor, after)
 	
 }
 
+function synchronizeOn(methodNode, before, loadInsns) {
+	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+	
+	var instructions = methodNode.instructions;
+	
+	var startInsn = instructions.get(before);
+	
+	var il = new InsnList();
+	for (var insn in loadInsns) {
+		il.add(loadInsns[insn].clone(null));
+	}
+	il.add(new InsnNode(opcodes.MONITORENTER));
+	
+	instructions.insertBefore(startInsn, il);
+	
+	var tgtInsn = startInsn.getNext();
+	while (tgtInsn != null) {
+		if (tgtInsn.getOpcode() == opcodes.IRETURN ||
+				tgtInsn.getOpcode() == opcodes.LRETURN ||
+				tgtInsn.getOpcode() == opcodes.FRETURN ||
+				tgtInsn.getOpcode() == opcodes.DRETURN ||
+				tgtInsn.getOpcode() == opcodes.ARETURN ||
+				tgtInsn.getOpcode() == opcodes.RETURN) {
+			il = new InsnList();
+			for (var insn in loadInsns) {
+				il.add(loadInsns[insn].clone(null));
+			}
+			il.add(new InsnNode(opcodes.MONITOREXIT));
+			instructions.insert(tgtInsn, il);
+		}
+		tgtInsn = tgtInsn.getNext();
+	}
+	
+}
+
+function synchronizeMethod(methodNode, debugLine) {
+	print("[JMTSUPERTRANS] " + debugLine + " Transformer Called");
+	
+	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+	
+	methodNode.access += opcodes.ACC_SYNCHRONIZED;
+	
+	print("[JMTSUPERTRANS] " + debugLine + " Transformer Complete");
+	
+	return methodNode;
+}
+
 function initializeCoreMod() {
     return {
     	'ServerWorldBlockPosFastUtkill': {
@@ -228,444 +277,59 @@ function initializeCoreMod() {
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
             	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+            	var FieldInsnNode = Java.type("org.objectweb.asm.tree.FieldInsnNode");
+            	var FieldNode = Java.type("org.objectweb.asm.tree.FieldNode");
             	var LabelNode = Java.type("org.objectweb.asm.tree.LabelNode");
             	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
             	var MethodType = asmapi.MethodType;
             	
             	var tgt = "it/unimi/dsi/fastutil/ints/Int2ObjectMap";
-            	var replace = "java/util/Map";
-            	var fullReplace = "java/util/concurrent/ConcurrentHashMap";
-            	var valuesTgt = "it/unimi/dsi/fastutil/objects/ObjectCollection";
-            	var valuesReplace = "java/util/Collection";
-            	var itrTgtDesc = "it/unimi/dsi/fastutil/objects/ObjectIterator";
-            	var itrRep = "java/util/Iterator"
-            	
-            	var fields = classNode.fields;
-            	
-            	var tgtField = asmapi.mapField("field_217498_x");
-            	
-            	
-            	for (var i in fields) {
-            		var fieldNode = fields[i];
-            		
-            		if (fieldNode.name != tgtField) {
-            			continue;
-            		}
-            		
-            		fieldNode.signature = fieldNode.signature.replace(tgt, replace);
-            		fieldNode.desc = fieldNode.desc.replace(tgt, replace);
-            		print(fieldNode.name + "|" + fieldNode.desc + "|" + fieldNode.signature);
-            	}
+            	var replace = "it/unimi/dsi/fastutil/ints/Int2ObjectMap";
+            	var fullReplace = "org/jmt/mcmt/paralelised/fastutil/Int2ObjectConcurrentHashMap";
             	
             	var methods = classNode.methods;
             	
             	var version = "";
             	
             	var targetMethods = {
-        			"<init>": { // "Same" for 115 and 1161
-        				"desc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveHandler;Lnet/minecraft/world/storage/WorldInfo;Lnet/minecraft/world/dimension/DimensionType;Lnet/minecraft/profiler/IProfiler;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V",
-        				"fallbackdesc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",
-        				"update": function(methodNode) {
-        					var instructions = methodNode.instructions;
-        					
-        					var initdesc1152 = "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveHandler;Lnet/minecraft/world/storage/WorldInfo;Lnet/minecraft/world/dimension/DimensionType;Lnet/minecraft/profiler/IProfiler;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V";
-        					
-        					if (methodNode.desc.equals(initdesc1152)) {
-        						version = "1152"
-        					} else {
-        						version = "1161"
-        					}
-        					print("[JMTSUPERTRANS] mcver:" + version);
-        					
-        					var initTgt = asmapi.findFirstMethodCall(methodNode, MethodType.SPECIAL, 
-        							"it/unimi/dsi/fastutil/ints/Int2ObjectLinkedOpenHashMap", "<init>", "()V");
-        					//var newTgt = asmapi.findFirstInstructionBefore(methodNode, opcodes.NEW, instructions.indexOf(initTgt))
-        					var putTgt = asmapi.findFirstInstructionAfter(methodNode, opcodes.PUTFIELD, instructions.indexOf(initTgt))
-        					
-        					var newTgt = initTgt;
-        					
-        					while (newTgt.getOpcode() != opcodes.NEW) {
-        						newTgt = newTgt.getPrevious();
-        					}
-        					
-        					if (initTgt == null || newTgt == null || putTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - INIT");
-        						return false;
-        					}
-        					
-        					newTgt.desc = fullReplace;
-        					initTgt.owner = fullReplace;
-    						putTgt.desc = putTgt.desc.replace(tgt, replace);
-    						
-        					
-    						
-    						
-    						return true;
-        				}
-        			},
-            	}
-            	
-            	targetMethods[asmapi.mapMethod("func_241136_z_")] = { // 1161 only
-            			"desc": "()Ljava/lang/Iterable;",
-            			"not1152" : true,
-            			"update": function(methodNode) {
-            				
-            				var getTgt = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, 0)
-            				var valTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, tgt, "values", "()Lit/unimi/dsi/fastutil/objects/ObjectCollection;");
-            				
-            				if (getTgt == null || valTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_241136_z_");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt.owner = replace;
-            				valTgt.desc = valTgt.desc.replace(valuesTgt, valuesReplace);
-            				
-            				return true;
-            			}
-            	}
-            	
-            	
-            	targetMethods[asmapi.mapMethod("func_217439_j")] = { // getDragons; Same for 115 and 1161
-            			"desc": "()Ljava/util/List;",
-            			"update": function(methodNode) {
-            				
-            				var getTgt = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, 0)
-            				var valTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, tgt, "values", "()Lit/unimi/dsi/fastutil/objects/ObjectCollection;");
-            				var itrTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, valuesTgt, "iterator", "()Lit/unimi/dsi/fastutil/objects/ObjectIterator;");
-            				
-            				if (getTgt == null || valTgt == null || itrTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_241136_z_");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt.owner = replace;
-            				valTgt.desc = valTgt.desc.replace(valuesTgt, valuesReplace);
-            				itrTgt.owner = valuesReplace;
-            				itrTgt.desc = itrTgt.desc.replace(itrTgtDesc, itrRep);
-            				
-            				return true;
-            			}
-            	}
-            	
-            	
-            	targetMethods[asmapi.mapMethod("func_217482_a")] = { // getEntities ;Same for 115 and 1161
-            			"desc": "(Lnet/minecraft/entity/EntityType;Ljava/util/function/Predicate;)Ljava/util/List;",
-            			"update": function(methodNode) {
-            				
-            				var getTgt = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, 0)
-            				var valTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, tgt, "values", "()Lit/unimi/dsi/fastutil/objects/ObjectCollection;");
-            				var itrTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, valuesTgt, "iterator", "()Lit/unimi/dsi/fastutil/objects/ObjectIterator;");
-            				
-            				if (getTgt == null || valTgt == null || itrTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_217482_a");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt.owner = replace;
-            				valTgt.desc = valTgt.desc.replace(valuesTgt, valuesReplace);
-            				itrTgt.owner = valuesReplace;
-            				itrTgt.desc = itrTgt.desc.replace(itrTgtDesc, itrRep);
-            				printInsnNode(itrTgt);
-            				
-            				return true;
-            			}
-            	}
-            	
-            	
-            	targetMethods[asmapi.mapMethod("func_73045_a")] = { // getEntityByID ;Same for 115 and 1161
-            			"desc": "(I)Lnet/minecraft/entity/Entity;",
-            			"update": function(methodNode) {
-            				
-            				var getTgt = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, 0)
-            				var valTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, tgt, "get", "(I)Ljava/lang/Object;");
-            				
-            				if (getTgt == null || valTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_73045_a");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt.owner = replace;
-            				valTgt.desc = "(Ljava/lang/Object;)Ljava/lang/Object;"
-            				
-        					var instructions = methodNode.instructions;
-            				var insn = asmapi.buildMethodCall("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", MethodType.STATIC);
-            				instructions.insertBefore(valTgt, insn);
+            			"<init>": { // "Same" for 115 and 1161
+            				"desc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveHandler;Lnet/minecraft/world/storage/WorldInfo;Lnet/minecraft/world/dimension/DimensionType;Lnet/minecraft/profiler/IProfiler;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V",
+            				"fallbackdesc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",
+            				"update": function(methodNode) {
+            					var instructions = methodNode.instructions;
             					
-            				return true;
-            			}
-            	}
-            	
-            	
-            	targetMethods[asmapi.mapMethod("func_217466_a")] = { // onChunkUnloading ;Same for 115 and 1161
-            			"desc": "(Lnet/minecraft/world/chunk/Chunk;)V",
-            			"update": function(methodNode) {
-            				
-            				var getTgt = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-            						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", 0)
-            				var valTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, tgt, "remove", "(I)Ljava/lang/Object;");
-            				
-            				if (getTgt == null || valTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_217466_a");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt.owner = replace;
-            				valTgt.desc = "(Ljava/lang/Object;)Ljava/lang/Object;"
-            				
-        					var instructions = methodNode.instructions;
-            				var insn = asmapi.buildMethodCall("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", MethodType.STATIC);
-            				instructions.insertBefore(valTgt, insn);
+            					var initdesc1152 = "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveHandler;Lnet/minecraft/world/storage/WorldInfo;Lnet/minecraft/world/dimension/DimensionType;Lnet/minecraft/profiler/IProfiler;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V";
             					
-            				return true;
-            			}
-            	}
-            	
-            	
-            	targetMethods[asmapi.mapMethod("func_217465_m")] = { // onEntityAdded ;Same for 115 and 1161
-            			"desc": "(Lnet/minecraft/entity/Entity;)V",
-            			"update": function(methodNode) {
-            				
-            				var instructions = methodNode.instructions;
-            				
-            				var getTgt = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-            						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", 0)
-            				var valTgt = asmapi.findFirstMethodCallAfter(methodNode, MethodType.INTERFACE, tgt, "put", "(ILjava/lang/Object;)Ljava/lang/Object;", instructions.indexOf(getTgt));
-            				
-            				var getTgt2 = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-            						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", instructions.indexOf(valTgt))
-            				var valTgt2 = asmapi.findFirstMethodCallAfter(methodNode, MethodType.INTERFACE, tgt, "put", "(ILjava/lang/Object;)Ljava/lang/Object;", instructions.indexOf(getTgt2));
-            				
-            				if (getTgt == null || valTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_217465_m");
-        						return false;
-        					}
-            				
-            				if (getTgt2 == null || valTgt2 == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_217465_m");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt.owner = replace;
-            				valTgt.desc = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
-            				
-        					var insn = asmapi.buildMethodCall("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", MethodType.STATIC);
-        					var il = new InsnList();
-                    		il.add(new InsnNode(opcodes.SWAP));
-                        	il.add(insn);
-                        	il.add(new InsnNode(opcodes.SWAP));
-            				
-            				instructions.insertBefore(valTgt, il);
-            				
-            				/*
-            				var printTgt = getTgt.getPrevious().getPrevious();
-    						for (var i = 0; i < 30; i++) {
-    							printInsnNode(printTgt);
-    							printTgt = printTgt.getNext();
-    						}
-    						print("------------")
-    						*/
-            				
-            				getTgt2.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt2.owner = replace;
-            				valTgt2.desc = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
-            				
-            				il = new InsnList();
-            				insn = asmapi.buildMethodCall("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", MethodType.STATIC);
-                    		il.add(new InsnNode(opcodes.SWAP));
-                        	il.add(insn);
-                        	il.add(new InsnNode(opcodes.SWAP));
+            					if (methodNode.desc.equals(initdesc1152)) {
+            						version = "1152"
+            					} else {
+            						version = "1161"
+            					}
+            					print("[JMTSUPERTRANS] mcver:" + version);
             					
-        					instructions.insertBefore(valTgt2, il);
-            				
-        					/*
-            				var printTgt = getTgt2.getPrevious().getPrevious();
-    						for (var i = 0; i < 30; i++) {
-    							printInsnNode(printTgt);
-    							printTgt = printTgt.getNext();
-    						}
-    						print("------------")
-    						*/
+            					var initTgt = asmapi.findFirstMethodCall(methodNode, MethodType.SPECIAL, 
+            							"it/unimi/dsi/fastutil/ints/Int2ObjectLinkedOpenHashMap", "<init>", "()V");
+            					var putTgt = asmapi.findFirstInstructionAfter(methodNode, opcodes.PUTFIELD, instructions.indexOf(initTgt))
             					
-            				return true;
-            			}
-            	}
-            	
-            	targetMethods[asmapi.mapMethod("func_72835_b")] = { // tick ;Same for 115 and 1161
-            			"desc": "(Ljava/util/function/BooleanSupplier;)V",
-            			"update": function(methodNode) {
-            				
-            				var instructions = methodNode.instructions;
-            				
-            				var getTgt = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-            						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", 0)
-            				var valTgt = asmapi.findFirstMethodCallAfter(methodNode, MethodType.INTERFACE, 
-            						"it/unimi/dsi/fastutil/objects/ObjectSet", "iterator", 
-            						"()Lit/unimi/dsi/fastutil/objects/ObjectIterator;", instructions.indexOf(getTgt));
-            				
-            				if (getTgt == null || valTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_72835_b");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				
-        					var insn = asmapi.buildMethodCall("org/jmt/mcmt/asmdest/ObjectIteratorHack", "intMapItrFake", 
-        							"(Ljava/util/Map;)Lit/unimi/dsi/fastutil/objects/ObjectIterator;", MethodType.STATIC);
-        					var skipTarget = new LabelNode();
-        					var il = new InsnList();
-        					il.add(insn);
-        					il.add(new JumpInsnNode(opcodes.GOTO, skipTarget));
-        					
-            				instructions.insert(getTgt, il);
-            				instructions.insert(valTgt, skipTarget);
+            					var newTgt = initTgt;
             					
-            				return true;
-            			}
-            	}
-            	
-            	targetMethods[asmapi.mapMethod("func_225322_a")] = { // writeDebugInfo ;Same for 115 and 1161
-            			"desc": "(Ljava/nio/file/Path;)V",
-            			"update": function(methodNode) {
-            				
-            				var instructions = methodNode.instructions;
-            				
-            				var getTgt = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-            						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", 0)
-            				var valTgt = asmapi.findFirstMethodCallAfter(methodNode, MethodType.INTERFACE, tgt, "size", "()I", instructions.indexOf(getTgt));
-            				
-            				var getTgt2 = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-            						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", instructions.indexOf(valTgt))
-            				var valTgt2 = asmapi.findFirstMethodCallAfter(methodNode, MethodType.INTERFACE, tgt, "values", 
-            						"()Lit/unimi/dsi/fastutil/objects/ObjectCollection;", instructions.indexOf(getTgt2));
-            				
-            				if (getTgt == null || valTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_217465_m");
-        						return false;
-        					}
-            				
-            				if (getTgt2 == null || valTgt2 == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_217465_m");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt.owner = replace;
-            				//valTgt.desc = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
-            				
-            				getTgt2.desc = getTgt.desc.replace(tgt, replace);
-            				valTgt2.owner = replace;
-            				valTgt2.desc = valTgt2.desc.replace(valuesTgt, valuesReplace);
-            				
-            				/*
-            				var printTgt = getTgt.getPrevious().getPrevious();
-    						for (var i = 0; i < 10; i++) {
-    							printInsnNode(printTgt);
-    							printTgt = printTgt.getNext();
-    						}
-    						print("------------")
-    						*/
-    						
-    						var printTgt = getTgt2.getPrevious().getPrevious();
-    						for (var i = 0; i < 10; i++) {
-    							printInsnNode(printTgt);
-    							printTgt = printTgt.getNext();
-    						}
-    						print("------------")
+            					while (newTgt.getOpcode() != opcodes.NEW) {
+            						newTgt = newTgt.getPrevious();
+            					}
             					
-            				return true;
-            			}
-            	}/**/
-            	
-            	targetMethods[asmapi.mapMethod("func_217450_l")] = { // countEntities ;1152 Only
-            			"desc": "()Lit/unimi/dsi/fastutil/objects/Object2IntMap;",
-            			"not1162": true,
-            			"update": function(methodNode) {
-            				
-            				var instructions = methodNode.instructions;
-            				
-            				var getTgt = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-            						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", 0)
-            				var valTgt = asmapi.findFirstMethodCallAfter(methodNode, MethodType.INTERFACE, tgt, "values", 
-            						"()Lit/unimi/dsi/fastutil/objects/ObjectCollection;", instructions.indexOf(getTgt));
-            				var itrTgt = valTgt.getNext();
-            				
-            				if (getTgt == null || valTgt == null) {
-        						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_72835_b");
-        						return false;
-        					}
-            				
-            				getTgt.desc = getTgt.desc.replace(tgt, replace);
-            				
-            				valTgt.owner = replace;
-            				valTgt.desc = valTgt.desc.replace(valuesTgt, valuesReplace);
-            				
-        					var insn = asmapi.buildMethodCall("org/jmt/mcmt/asmdest/ObjectIteratorHack", "itrWrap", 
-        							"(Ljava/lang/Iterable;)Lit/unimi/dsi/fastutil/objects/ObjectIterator;", MethodType.STATIC);
-        					var skipTarget = new LabelNode();
-        					var il = new InsnList();
-        					il.add(insn);
-        					il.add(new JumpInsnNode(opcodes.GOTO, skipTarget));
-        					
-            				instructions.insert(valTgt, il);
-            				instructions.insert(itrTgt, skipTarget);
+            					if (initTgt == null || newTgt == null || putTgt == null) {
+            						print("[JMTSUPERTRANS] MISSING TARGET INSN - INIT");
+            						return false;
+            					}
             					
-            				return true;
-            			}
-            	}
-            	
-            	
-            	var forgeSpecialGetEntitiesDesc = "()Ljava/util/stream/Stream;";
-            	var forgeSpecialGetEntitiesSig = "()Ljava/util/stream/Stream<Lnet/minecraft/entity/Entity;>;"
-            	var forgeSpecialGetEntitiesFun = function(methodNode) {
-            		var getTgt = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, 0)
-    				var valTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, tgt, "values", "()Lit/unimi/dsi/fastutil/objects/ObjectCollection;");
-    				var itrTgt = asmapi.findFirstMethodCall(methodNode, MethodType.INTERFACE, valuesTgt, "stream", "()Ljava/util/stream/Stream;");
-    				
-    				if (getTgt == null || valTgt == null || itrTgt == null) {
-						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_241136_z_");
-						return false;
-					}
-    				
-    				getTgt.desc = getTgt.desc.replace(tgt, replace);
-    				valTgt.owner = replace;
-    				valTgt.desc = valTgt.desc.replace(valuesTgt, valuesReplace);
-    				itrTgt.owner = valuesReplace;
-    				
-    				return true;
-            	};
-            	
-            	var forgeSpecialRemoveEntityName = "removeEntity"
-            	var forgeSpecialRemoveEntityDesc = "(Lnet/minecraft/entity/Entity;Z)V"
-            	var forgeSpecialRemoveEntityFun = function(methodNode) {
-    				
-    				var instructions = methodNode.instructions;
-    				
-    				var getTgt = getFieldAccessAfter(methodNode, opcodes.GETFIELD, "net/minecraft/world/server/ServerWorld",
-    						tgtField, "Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;", 0)
-    				var valTgt = asmapi.findFirstMethodCallAfter(methodNode, MethodType.INTERFACE, tgt, "remove", "(I)Ljava/lang/Object;", instructions.indexOf(getTgt));
-    				
-    				if (getTgt == null || valTgt == null) {
-						print("[JMTSUPERTRANS] MISSING TARGET INSN - func_217467_h");
-						return false;
-					}
-    				
-    				getTgt.desc = getTgt.desc.replace(tgt, replace);
-    				valTgt.owner = replace;
-    				valTgt.desc = "(Ljava/lang/Object;)Ljava/lang/Object;"
-    				
-					var insn = asmapi.buildMethodCall("java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", MethodType.STATIC);
-    				
-    				instructions.insertBefore(valTgt, insn);
-    					
-    				return true;
-    			}
+            					newTgt.desc = fullReplace;
+            					initTgt.owner = fullReplace;
+        						putTgt.desc = putTgt.desc.replace(tgt, replace);
+        						
+        						return true;
+            				}
+            			},
+                	}
             	
             	
             	for (var i in methods) {
@@ -680,19 +344,6 @@ function initializeCoreMod() {
             			var result = op.update(methodNode)
             			op.result = result;
             		} 
-            		else if (methodNode.desc == forgeSpecialGetEntitiesDesc
-            				&& methodNode.signature == forgeSpecialGetEntitiesSig) {
-            			print("[JMTSUPERTRANS] FOUND FORGE SPECIAL GETENTITIES!!!")
-            			
-            			print("[JMTSUPERTRANS] updating method: " + methodNode.name + methodNode.desc)
-            			forgeSpecialGetEntitiesFun(methodNode);
-            		} else if (methodNode.desc == forgeSpecialRemoveEntityDesc
-            				&& methodNode.name == forgeSpecialRemoveEntityName) {
-            			print("[JMTSUPERTRANS] FOUND FORGE SPECIAL REMOVEENTITY!!!")
-            			
-            			print("[JMTSUPERTRANS] updating method: " + methodNode.name + methodNode.desc)
-            			forgeSpecialRemoveEntityFun(methodNode);
-            		}
             	}
             	
             	for (var o in targetMethods) {
@@ -703,9 +354,6 @@ function initializeCoreMod() {
             			print("[JMTSUPERTRANS] failed to update method: " + o + targetMethods[o].desc)
             		}
             	}
-            	
-            	
-            	
             	
             	return classNode;
             }

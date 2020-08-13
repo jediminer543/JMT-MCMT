@@ -122,6 +122,25 @@ function initializeCoreMod() {
             	return methodNode;
             }
     	},
+    	//onBlockStateChange
+    	'ServerWorldOnBlockStateChange': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.server.ServerWorld',
+                "methodName": "func_217393_a",
+        		"methodDesc": "(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;)V"
+            },
+            "transformer": synchronizeMethod("ServerWorldOnBlockStateChange")
+    	},
+    	'POIManager_func_219149_a_': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.village.PointOfInterestManager',
+                "methodName": "func_219149_a",
+        		"methodDesc": "(Lnet/minecraft/util/math/ChunkPos;Ljava/lang/Integer;)Ljava/util/Optional"
+            },
+            "transformer": synchronizeMethod("POIManager_func_219149_a_")
+    	},
     	'ServerWorldParaProvider': {
     		'target': {
                 'type': 'CLASS',
@@ -272,6 +291,6 @@ function initializeCoreMod() {
             	
             	return methodNode;
             }
-    	}
+    	},
     }
 }

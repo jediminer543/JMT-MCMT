@@ -23,6 +23,10 @@ public class StatsCommand {
 			resetAll();
 			return 1;
 		})).executes(cmdCtx -> {
+			if (!threadStats) {
+				StringTextComponent message = new StringTextComponent("Stat calcs are disabled so stats are out of date"); 
+				cmdCtx.getSource().sendFeedback(message, true);
+			}
 			StringBuilder messageString = new StringBuilder(
 					"Current max threads " + mean(maxThreads, liveValues) + " (");
 			messageString.append("World:" + mean(maxWorlds, liveValues));
@@ -32,7 +36,15 @@ public class StatsCommand {
 			StringTextComponent message = new StringTextComponent(messageString.toString());
 			cmdCtx.getSource().sendFeedback(message, true);
 			return 1;
-		}).then(Commands.literal("startlog").requires(cmdSrc -> {
+		}).then(Commands.literal("toggle").requires(cmdSrc -> {
+			return cmdSrc.hasPermissionLevel(2);
+		}).executes(cmdCtx -> {
+			threadStats = !threadStats;
+			StringTextComponent message = new StringTextComponent("Stat calcs are " + 
+					(!threadStats ? "disabled" : "enabled") + "!");
+			cmdCtx.getSource().sendFeedback(message, true);
+			return 1;
+		})).then(Commands.literal("startlog").requires(cmdSrc -> {
 			return cmdSrc.hasPermissionLevel(2);
 		}).executes(cmdCtx -> {
 			doLogging = true;
@@ -65,12 +77,12 @@ public class StatsCommand {
 	}
 
 	static boolean resetThreadStats = false;
-	static boolean threadStats = true;
+	static boolean threadStats = false;
 	static boolean doLogging = false;
 
 	// Thread Stats
 	static final int samples = 100;
-	static final int stepsPer = 10;
+	static final int stepsPer = 35;
 	static int maxThreads[] = new int[samples];
 	static int maxWorlds[] = new int[samples];
 	static int maxTEs[] = new int[samples];
@@ -106,7 +118,7 @@ public class StatsCommand {
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
-						if (threadStats) {
+						if (threadStats || doLogging) {
 							if (resetThreadStats) {
 								maxThreads = new int[samples];
 								maxWorlds = new int[samples];
@@ -128,14 +140,20 @@ public class StatsCommand {
 								maxEnvs[currentPos] = 0;
 								maxThreads[currentPos] = 0;
 							}
+							int total = 0;
+							int worlds = ASMHookTerminator.currentWorlds.get();
 							maxWorlds[currentPos] = Math.max(maxWorlds[currentPos],
-									ASMHookTerminator.currentWorlds.get());
-							maxTEs[currentPos] = Math.max(maxTEs[currentPos], ASMHookTerminator.currentTEs.get());
+									worlds);
+							int tes = ASMHookTerminator.currentTEs.get();
+							maxTEs[currentPos] = Math.max(maxTEs[currentPos], tes);
+							int entities = ASMHookTerminator.currentEnts.get();
 							maxEntities[currentPos] = Math.max(maxEntities[currentPos],
-									ASMHookTerminator.currentEnts.get());
-							maxEnvs[currentPos] = Math.max(maxEnvs[currentPos], ASMHookTerminator.currentEnvs.get());
-							maxThreads[currentPos] = maxWorlds[currentPos] + maxTEs[currentPos]
-									+ maxEntities[currentPos] + maxEnvs[currentPos];
+									entities);
+							int envs = ASMHookTerminator.currentEnvs.get();
+							maxEnvs[currentPos] = Math.max(maxEnvs[currentPos], envs);
+							total = worlds+tes+entities+envs;
+							maxThreads[currentPos] = Math.max(maxThreads[currentPos], total);
+									
 						}
 						if (mcs != null && !mcs.isServerRunning()) {
 							doLogging = false;
@@ -150,7 +168,7 @@ public class StatsCommand {
 								if (mcs != null && mcs.isServerRunning()) {
 									ticktime = mcs.getTickTime();
 								}
-								float threadCount = currentPos-1 >= 0 ? maxThreads[currentPos-1] : -1;
+								float threadCount = mean(maxThreads, liveValues);
 								long memory = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
 								int enabled = 0; 
 								enabled |= GeneralConfig.disabled ? 1 : 0;

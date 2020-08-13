@@ -76,6 +76,7 @@ public class ASMHookTerminator {
 				try {
 					currentWorlds.incrementAndGet();
 					serverworld.tick(hasTimeLeft);
+					net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 				} finally {
 					p.arriveAndDeregister();
 					currentWorlds.decrementAndGet();

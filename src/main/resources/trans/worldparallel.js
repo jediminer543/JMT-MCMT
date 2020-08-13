@@ -11,6 +11,7 @@ function initializeCoreMod() {
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
             	var LabelNode = Java.type("org.objectweb.asm.tree.LabelNode");
             	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
             	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
@@ -110,6 +111,18 @@ function initializeCoreMod() {
             				"org/jmt/mcmt/asmdest/ASMHookTerminator", "postTick",
             				"(Lnet/minecraft/server/MinecraftServer;)V" ,false));
             		instructions.insert(postTarget, il);
+            		
+            		// FORGE BUS HACKS
+            		
+            		var skipTarget2 = new LabelNode();
+            		var toSkip = asmapi.findFirstMethodCallAfter(method, MethodType.STATIC, 
+            				"net/minecraftforge/fml/hooks/BasicEventHooks", "onPostWorldTick", "(Lnet/minecraft/world/World;)V", 0);
+            		
+            		il = new InsnList();
+            		il.add(new InsnNode(opcodes.POP));
+            		il.add(new JumpInsnNode(opcodes.GOTO, skipTarget2));
+            		instructions.insertBefore(toSkip, il);
+            		instructions.insert(toSkip, skipTarget2);
             		
             		// Break because this particular coremod only targets one method
             		break;
