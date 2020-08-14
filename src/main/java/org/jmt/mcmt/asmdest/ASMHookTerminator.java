@@ -62,7 +62,13 @@ public class ASMHookTerminator {
 	
 	public static void callTick(ServerWorld serverworld, BooleanSupplier hasTimeLeft, MinecraftServer server) {
 		if (GeneralConfig.disabled || GeneralConfig.disableWorld) {
-			serverworld.tick(hasTimeLeft);
+			try {
+				serverworld.tick(hasTimeLeft);
+			} catch (Exception e) {
+				throw e;
+			} finally {
+				net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+			}
 			return;
 		}
 		if (mcs != server) {
