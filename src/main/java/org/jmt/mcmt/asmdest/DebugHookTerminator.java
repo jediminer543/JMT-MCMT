@@ -53,7 +53,7 @@ public class DebugHookTerminator {
 					break;
 				}
 				// Nothing more to execute
-				if (failcount++ < 5000) {
+				if (failcount++ < GeneralConfig.timeoutCount) {
 					Thread.yield();
 					LockSupport.parkNanos("THE END IS ~~NEVER~~ LOADING", 100000L);
 				} else {

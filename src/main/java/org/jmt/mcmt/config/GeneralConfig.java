@@ -12,6 +12,7 @@ import org.jmt.mcmt.Constants;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.config.ModConfig;
@@ -56,6 +57,7 @@ public class GeneralConfig {
 	public static boolean disableChunkProvider;
 	public static boolean enableChunkTimeout;
 	public static boolean enableTimeoutRegen;
+	public static int timeoutCount;
 
 	public static final GeneralConfigTemplate GENERAL;
 	public static final ForgeConfigSpec GENERAL_SPEC;
@@ -87,6 +89,7 @@ public class GeneralConfig {
 		
 		enableChunkTimeout = GENERAL.enableChunkTimeout.get();
 		enableTimeoutRegen = GENERAL.enableTimeoutRegen.get();
+		timeoutCount = GENERAL.timeoutCount.get();
 		
 		teWhiteList = ConcurrentHashMap.newKeySet();//new HashSet<Class<?>>();
 		teUnfoundWhiteList = new ArrayList<String>();
@@ -124,6 +127,7 @@ public class GeneralConfig {
 		
 		GENERAL.enableChunkTimeout.set(enableChunkTimeout);
 		GENERAL.enableTimeoutRegen.set(enableTimeoutRegen);
+		GENERAL.timeoutCount.set(timeoutCount);
 		
 		GENERAL.teWhiteList.get().clear();
 		GENERAL.teWhiteList.get().addAll(teUnfoundWhiteList);
@@ -154,6 +158,7 @@ public class GeneralConfig {
 		public final BooleanValue disableChunkProvider;
 		public final BooleanValue enableChunkTimeout;
 		public final BooleanValue enableTimeoutRegen;
+		public final IntValue timeoutCount;
 		
 		public GeneralConfigTemplate(ForgeConfigSpec.Builder builder) {
 			disabled = builder
@@ -203,6 +208,10 @@ public class GeneralConfig {
 			enableTimeoutRegen = builder
 					.comment("Attempts to re-load timed out chunks; Seems to work")
 					.define("enableTimeoutReload", false);
+			timeoutCount = builder
+					.comment("Ammount of workless iterations to wait before declaring a chunk load attempt as timed out\n"
+							+"This is in ~100us itterations (plus minus yield time) so timeout >= timeoutCount*100us")
+					.defineInRange("timeoutCount", 5000, 500, 500000);
 		}
 
 	}
