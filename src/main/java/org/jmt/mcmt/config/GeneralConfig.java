@@ -1,14 +1,36 @@
 package org.jmt.mcmt.config;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.jmt.mcmt.Constants;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
+import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.config.ModConfig;
 
+/**
+ * 
+ * We have 2 configs; startup config and running config
+ * 
+ * GeneralConfigTemplate contains the startup config; GeneralConfig the running
+ * 
+ * {@link #bakeConfig()} performs start->running and is executed on startup or reset via command
+ * 
+ * {@link #saveConfig()} performs running->start and is executed by command save
+ * 
+ * All settings are runtime configurable
+ * 
+ * @author jediminer543
+ *
+ */
 @EventBusSubscriber(modid = Constants.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class GeneralConfig {
 
@@ -20,10 +42,20 @@ public class GeneralConfig {
 
 	public static boolean disableTileEntity;
 	public static boolean chunkLockModded;
+	public static Set<Class<?>> teWhiteList;
+	public static Set<Class<?>> teBlackList;
+	
+	// Any TE class strings that aren't avaliable in the current environment
+	// We use classes for the main operation as class-class comparisons are memhash based
+	// So (should) be MUCH faster than string-string comparisons
+	public static List<String> teUnfoundWhiteList;
+	public static List<String> teUnfoundBlackList;
 
 	public static boolean disableEnvironment;
 
 	public static boolean disableChunkProvider;
+	public static boolean enableChunkTimeout;
+	public static boolean enableTimeoutRegen;
 
 	public static final GeneralConfigTemplate GENERAL;
 	public static final ForgeConfigSpec GENERAL_SPEC;
@@ -41,6 +73,9 @@ public class GeneralConfig {
 		}
 	}
 
+	/**
+	 * 
+	 */
 	public static void bakeConfig() {
 		disabled = GENERAL.disabled.get();
 		disableWorld = GENERAL.disableWorld.get();
@@ -48,7 +83,34 @@ public class GeneralConfig {
 		disableTileEntity = GENERAL.disableTileEntity.get();
 		disableEnvironment = GENERAL.disableEnvironment.get();
 		disableChunkProvider = GENERAL.disableChunkProvider.get();
-		chunkLockModded = GENERAL.chunkLockModded.get(); 
+		chunkLockModded = GENERAL.chunkLockModded.get();
+		
+		enableChunkTimeout = GENERAL.enableChunkTimeout.get();
+		enableTimeoutRegen = GENERAL.enableTimeoutRegen.get();
+		
+		teWhiteList = ConcurrentHashMap.newKeySet();//new HashSet<Class<?>>();
+		teUnfoundWhiteList = new ArrayList<String>();
+		GENERAL.teWhiteList.get().forEach(str -> {
+			Class<?> c = null;
+			try {
+				c = Class.forName(str);
+				teWhiteList.add(c);
+			} catch (ClassNotFoundException cnfe) {
+				teUnfoundWhiteList.add(str);
+			}
+		});
+		
+		teBlackList = ConcurrentHashMap.newKeySet();//new HashSet<Class<?>>();
+		teUnfoundBlackList = new ArrayList<String>();
+		GENERAL.teBlackList.get().forEach(str -> {
+			Class<?> c = null;
+			try {
+				c = Class.forName(str);
+				teBlackList.add(c);
+			} catch (ClassNotFoundException cnfe) {
+				teUnfoundBlackList.add(str);
+			}
+		});
 	}
 	
 	public static void saveConfig() {
@@ -59,6 +121,18 @@ public class GeneralConfig {
 		GENERAL.disableEnvironment.set(disableEnvironment);
 		GENERAL.disableChunkProvider.set(disableChunkProvider);
 		GENERAL.chunkLockModded.set(chunkLockModded); 
+		
+		GENERAL.enableChunkTimeout.set(enableChunkTimeout);
+		GENERAL.enableTimeoutRegen.set(enableTimeoutRegen);
+		
+		GENERAL.teWhiteList.get().clear();
+		GENERAL.teWhiteList.get().addAll(teUnfoundWhiteList);
+		GENERAL.teWhiteList.get().addAll(teWhiteList.stream().map(clz -> clz.getName()).collect(Collectors.toList()));
+
+		GENERAL.teBlackList.get().clear();
+		GENERAL.teBlackList.get().addAll(teUnfoundBlackList);
+		GENERAL.teBlackList.get().addAll(teBlackList.stream().map(clz -> clz.getName()).collect(Collectors.toList()));
+		
 		GENERAL_SPEC.save();
 	}
 
@@ -72,10 +146,14 @@ public class GeneralConfig {
 		
 		public final BooleanValue disableTileEntity;
 		public final BooleanValue chunkLockModded;
+		public final ConfigValue<List<String>> teWhiteList;
+		public final ConfigValue<List<String>> teBlackList;
 		
 		public final BooleanValue disableEnvironment;
 		
 		public final BooleanValue disableChunkProvider;
+		public final BooleanValue enableChunkTimeout;
+		public final BooleanValue enableTimeoutRegen;
 		
 		public GeneralConfigTemplate(ForgeConfigSpec.Builder builder) {
 			disabled = builder
@@ -99,6 +177,15 @@ public class GeneralConfig {
 					.comment("Use chunklocks for any unknown (i.e. modded) tile entities\n"
 							+ "Chunklocking means we prevent multiple tile entities a 1 chunk radius of eachother being ticked to limit concurrency impacts")
 					.define("chunkLockModded", true);
+			teWhiteList = builder
+					.comment("List of tile entity classes that will always be fully parallelised\n"
+							+ "This will occur even when chunkLockModded is set to true\n"
+							+ "Adding pistons to this will not parallelise them")
+					.define("teWhiteList", (List<String>)new ArrayList<String>());
+			teBlackList = builder
+					.comment("List of tile entity classes that will always be chunklocked\n"
+							+ "This will occur even when chunkLockModded is set to false")
+					.define("teBlackList", (List<String>)new ArrayList<String>());
 			builder.pop();
 			builder.push("environment");
 			disableEnvironment = builder
@@ -109,6 +196,13 @@ public class GeneralConfig {
 			disableChunkProvider = builder
 					.comment("Disable parallelised chunk caching; doing this will result in much lower performance with little to no gain")
 					.define("disableChunkProvider", false);
+			enableChunkTimeout = builder
+					.comment("Enable chunk loading timeouts; this will forcably kill any chunks that fail to load in sufficient time\n"
+							+"may allow for loading of damaged/corrupted worlds")
+					.define("enableChunkTimeout", false);
+			enableTimeoutRegen = builder
+					.comment("Attempts to re-load timed out chunks; Seems to work")
+					.define("enableTimeoutReload", false);
 		}
 
 	}

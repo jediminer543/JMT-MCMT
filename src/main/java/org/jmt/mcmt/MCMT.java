@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.commands.StatsCommand;
-import org.jmt.mcmt.commands.ToggleCommand;
+import org.jmt.mcmt.commands.ConfigCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -71,7 +71,7 @@ public class MCMT
         // do something when the server starts
         LOGGER.info("HELLO from server starting");
         CommandDispatcher<CommandSource> commandDispatcher = event.getServer().getCommandManager().getDispatcher();
-        ToggleCommand.register(commandDispatcher);
+        ConfigCommand.register(commandDispatcher);
         StatsCommand.resetAll();
     }
 

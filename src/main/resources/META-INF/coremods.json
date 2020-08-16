@@ -6,5 +6,6 @@
   "generalparallel": "trans/general/generalparallel.js",
   "gen2parallel": "trans/general/gen2parallel.js",
   "varreplace": "trans/general/varreplace.js",
-  "debugnote": "trans/client/debugnote.js"
+  "debugnote": "trans/client/debugnote.js",
+  "SCPDriveDebug": "trans/debug/SCPDriveDebug.js"
 }

@@ -6,6 +6,13 @@ import java.util.Map;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
+//TODO relocate to paralelised.fastutil
+/**
+ * A compatibility hack that converts normal iterators to fastutil iterators; and converts entry-sets
+ * 
+ * @author jediminer543
+ *
+ */
 public class ObjectIteratorHack {
 
 	public static class WrapperObjectIterator<T> implements ObjectIterator<T> {

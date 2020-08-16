@@ -160,7 +160,7 @@ public class StatsCommand {
 						}
 						if (doLogging) {
 							if (logFile == null) {
-								logFile = new FileWriter("mcmp-stats-log-"+sdf.format(new Date()) +".csv");
+								logFile = new FileWriter("mcmt-stats-log-"+sdf.format(new Date()) +".csv");
 								logFile.write("TickTime,Memory,AvgMCMPThreads,Enabled,\n");
 							}
 							if (currentSteps % stepsPer == 0) {

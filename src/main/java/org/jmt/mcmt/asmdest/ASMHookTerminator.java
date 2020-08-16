@@ -2,8 +2,6 @@ package org.jmt.mcmt.asmdest;
 
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
@@ -126,28 +124,32 @@ public class ASMHookTerminator {
 		});
 	}
 	
-	static List<ITickableTileEntity> tteList = new CopyOnWriteArrayList<ITickableTileEntity>();
-	
+	public static boolean filterTE(ITickableTileEntity tte) {
+		boolean isLocking = false;
+		if (GeneralConfig.teBlackList.contains(tte.getClass())) {
+			isLocking = true;
+		}
+		if (!isLocking && GeneralConfig.chunkLockModded && !tte.getClass().getPackage().equals(Package.getPackage("net.minecraft.tileentity"))) {
+			isLocking = true;
+		}
+		if (isLocking && GeneralConfig.teWhiteList.contains(tte.getClass())) {
+			isLocking = false;
+		}
+		if (tte instanceof PistonTileEntity) {
+			isLocking = true;
+		}
+		return isLocking;
+	}
+		
 	public static void callTileEntityTick(ITickableTileEntity tte, World world) {
 		if (GeneralConfig.disabled  || GeneralConfig.disableTileEntity || !(world instanceof ServerWorld)) {
 			tte.tick();
 			return;
 		}
-		if (tteList.contains(tte)) {
-			LOGGER.warn("Re-Ticking TTE: " + tte);
-		}
-		tteList.add(tte);
-		boolean isLocking = false;
-		if (tte instanceof PistonTileEntity) {
-			isLocking = true;
-		}
-		if (GeneralConfig.chunkLockModded && !tte.getClass().getPackage().equals(Package.getPackage("net.minecraft.tileentity"))) {
-			isLocking = true;
-		}
-		final boolean doLock = isLocking;
 		p.register();
 		ex.execute(() -> {
 			try {
+				final boolean doLock = filterTE(tte);
 				if (doLock) {
 					BlockPos bp = ((TileEntity) tte).getPos();
 					long[] locks = ChunkLock.lock(bp, 1);
@@ -195,7 +197,6 @@ public class ASMHookTerminator {
 		} else {
 			p.arriveAndAwaitAdvance();
 			isTicking.set(false);
-			tteList.clear();
 			p = null;
 		}
 	}
