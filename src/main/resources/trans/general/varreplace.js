@@ -244,7 +244,8 @@ function initializeCoreMod() {
             		var methodNode = methods[i];
             		
             		var op = targetMethods[methodNode.name];
-            		if (op != undefined && (op.desc == methodNode.desc || op.fallbackdesc == methodNode.desc)) {
+            		if (op != undefined && (op.desc == methodNode.desc 
+            				|| op.fallbackdesc == methodNode.desc || op.fallbackdesc2 == methodNode.desc)) {
             			if (op.fallbackdesc == methodNode.desc || op.fallbackdesc2 == methodNode.desc) {
             				print("[JMTSUPERTRANS] 1.16 WARNING")
             			}
@@ -340,7 +341,8 @@ function initializeCoreMod() {
             		var methodNode = methods[i];
             		
             		var op = targetMethods[methodNode.name];
-            		if (op != undefined && (op.desc == methodNode.desc || op.fallbackdesc == methodNode.desc)) {
+            		if (op != undefined && (op.desc == methodNode.desc 
+            				|| op.fallbackdesc == methodNode.desc || op.fallbackdesc2 == methodNode.desc)) {
             			if (op.fallbackdesc == methodNode.desc || op.fallbackdesc2 == methodNode.desc) {
             				print("[JMTSUPERTRANS] 1.16 WARNING")
             			}
