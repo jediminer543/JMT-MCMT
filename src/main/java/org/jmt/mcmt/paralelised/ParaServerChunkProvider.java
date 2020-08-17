@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
@@ -28,7 +27,6 @@ import net.minecraft.world.gen.feature.template.TemplateManager;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraft.world.storage.DimensionSavedDataManager;
-
 // 1.16.1
 import net.minecraft.world.storage.SaveFormat.LevelSave;
 
