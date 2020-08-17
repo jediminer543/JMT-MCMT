@@ -122,6 +122,23 @@ function initializeCoreMod() {
             	return methodNode;
             }
     	},
+    	'ServerWorldCollections1162': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.server.ServerWorld',
+                "methodName": "<init>",
+        		"methodDesc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V"
+            },
+            "transformer": function(methodNode) {
+            	print("[JMTSUPERTRANS] ServerWorldCollections116 Transformer Called");
+            	
+            	toParallelHashSets(methodNode);
+            	
+            	print("[JMTSUPERTRANS] ServerWorldCollections116 Transformer Complete");
+            	
+            	return methodNode;
+            }
+    	},
     	//onBlockStateChange
     	'ServerWorldOnBlockStateChange': {
             'target': {
@@ -206,6 +223,55 @@ function initializeCoreMod() {
                 'class': 'net.minecraft.world.server.ServerWorld',
                 'methodName': "<init>",
                 'methodDesc': "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V"
+            },
+            "transformer": function(method) {
+            	print("[JMTSUPERTRANS] ServerWorldParaProvider116 Transformer Called");
+            	
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var MethodType = asmapi.MethodType;
+        		
+        		print("[JMTSUPERTRANS] Matched method " + method.name + " " + method.desc);
+        		
+        		var callMethod = "<init>";
+        		var callClass = "net/minecraft/world/server/ServerChunkProvider";
+        		var callDesc = "(Lnet/minecraft/world/server/ServerWorld;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lcom/mojang/datafixers/DataFixer;Lnet/minecraft/world/gen/feature/template/TemplateManager;Ljava/util/concurrent/Executor;Lnet/minecraft/world/gen/ChunkGenerator;IZLnet/minecraft/world/chunk/listener/IChunkStatusListener;Ljava/util/function/Supplier;)V"
+        	
+        		var callTarget = asmapi.findFirstMethodCallAfter(method, MethodType.SPECIAL, 
+        				callClass, callMethod, callDesc, 0);
+        		
+        		if (callTarget == null) {
+        			print("[JMTSUPERTRANS] MISSING TARGET INSN");
+        			return;
+        		}
+        		
+        		var tgtMethod = callMethod;
+        		var tgtClass = "org/jmt/mcmt/paralelised/ParaServerChunkProvider";
+        		var tgtDesc = callDesc;
+        		
+        		var newTgt = callTarget;
+				
+				while (newTgt.getOpcode() != opcodes.NEW) {
+					newTgt = newTgt.getPrevious();
+				}
+        		
+        		callTarget.owner = tgtClass;
+        		callTarget.name = tgtMethod;
+        		callTarget.desc = tgtDesc;
+        		
+        		newTgt.desc = tgtClass;
+            		
+        		print("[JMTSUPERTRANS] ServerWorldParaProvider Transformer Complete");
+            	
+            	return method;
+            }
+    	},
+    	'ServerWorldParaProvider1162': {
+    		'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.server.ServerWorld',
+                'methodName': "<init>",
+                'methodDesc': "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",
             },
             "transformer": function(method) {
             	print("[JMTSUPERTRANS] ServerWorldParaProvider116 Transformer Called");

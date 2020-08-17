@@ -1,5 +1,54 @@
 function initializeCoreMod() {
     return {
+    	'executorListingHack': {
+    		//
+    		'target': {
+    			'type': 'CLASS',
+                'name': 'net.minecraft.util.Util'
+    		},
+    		"transformer": function(classNode) {
+    			print("[JMTSUPERTRANS] executorListingHack Transformer Called");
+    			
+    			var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+            	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+            	var MethodType = asmapi.MethodType;
+    			
+    			var desc = "(Ljava/lang/String;Ljava/util/concurrent/ForkJoinPool;)Ljava/util/concurrent/ForkJoinWorkerThread;" 
+    			
+    			for (methodid in classNode.methods) {
+    				var methodNode = classNode.methods[methodid];
+    				
+    				if (methodNode.desc != desc) {
+    					continue;
+    				}
+    				
+    				print("FOUND PICKUP TARGET")
+    				
+    				var instructions = methodNode.instructions;
+    				
+    				//    INVOKEVIRTUAL java/util/concurrent/ForkJoinWorkerThread.setName(Ljava/lang/String;)V
+    				var target = asmapi.findFirstMethodCallAfter(methodNode, MethodType.VIRTUAL, 
+    						"java/util/concurrent/ForkJoinWorkerThread", "setName", "(Ljava/lang/String;)V", 0);
+    				
+    				var il = new InsnList();
+                	il.add(new VarInsnNode(opcodes.ALOAD, 0));
+                	il.add(new VarInsnNode(opcodes.ALOAD, 2));
+                	il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
+            				"org/jmt/mcmt/asmdest/ASMHookTerminator", "regThread",
+            				"(Ljava/lang/String;Ljava/lang/Thread;)V" ,false));
+                	instructions.insert(target, il);
+                	
+                	break;
+    			}
+    			
+    			print("[JMTSUPERTRANS] executorListingHack Transformer Called");
+    			
+    			return classNode
+    		}
+    	},
     	'serverChunkProviderGetChunkPatch': {
             'target': {
                 'type': 'METHOD',
@@ -14,12 +63,15 @@ function initializeCoreMod() {
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
             	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+            	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+            	var FieldInsnNode = Java.type("org.objectweb.asm.tree.FieldInsnNode");
+            	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
             	
             	
             	var instructions = methodNode.instructions;
             	
-            	methodNode.access += opcodes.ACC_SYNCHRONIZED;
-            	
+            	print("[JMTSUPERTRANS] Patching thread check");
+            	            	
             	var target = asmapi.findFirstInstruction(methodNode, opcodes.GETFIELD);
             	
             	var il = new InsnList();
@@ -27,6 +79,28 @@ function initializeCoreMod() {
             	il.add(new InsnNode(opcodes.DUP));
             	instructions.insert(target, il);
             	
+            	/* Not needed; and broken; built as default cache WILL die under concurrency
+            	print("[JMTSUPERTRANS] Patching thread caching"); 
+            	
+            	//mv.visitFieldInsn(GETSTATIC, "org/jmt/mcmt/config/GeneralConfig", "disabled", "Z");
+            	var cacheTarget = instructions.getFirst();
+            	
+            	while (!(cacheTarget instanceof VarInsnNode) 
+            			&& cacheTarget.getOpcode() != opcodes.ILOAD
+            			&& cacheTarget["var"] != 8) {
+            		cacheTarget = cacheTarget.getNext()
+            	}
+            	cacheTarget = cacheTarget.getNext()
+            	cacheTarget = cacheTarget.getNext()
+            	
+            	var cacheEndLbl = cacheTarget.label;
+            	
+            	il = new InsnList();
+            	il.add(new FieldInsnNode(opcodes.GETSTATIC, "org/jmt/mcmt/config/GeneralConfig", "disabled", "Z"));
+            	il.add(new JumpInsnNode(opcodes.IFNE, cacheEndLbl));
+            	
+            	instructions.insert(cacheTarget, il);
+            	*/
             	
             	print("[JMTSUPERTRANS] GetChunkPatch Transformer Complete");
             	

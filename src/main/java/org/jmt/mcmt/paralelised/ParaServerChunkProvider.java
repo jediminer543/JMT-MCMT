@@ -3,14 +3,17 @@ package org.jmt.mcmt.paralelised;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jmt.mcmt.asmdest.ASMHookTerminator;
 import org.jmt.mcmt.config.GeneralConfig;
 
 import com.mojang.datafixers.DataFixer;
@@ -39,7 +42,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	protected static final int CACHE_SIZE = 64;
 	protected Thread cacheThread;
 
-	/* 1.16.1 code; AKA the only thing that changed */
+	/* 1.16.1 code; AKA the only thing that changed  */
 	public ParaServerChunkProvider(ServerWorld worldIn, LevelSave worldDirectory, DataFixer dataFixer,
 			TemplateManager templateManagerIn, Executor executorIn, ChunkGenerator chunkGeneratorIn, int viewDistance,
 			boolean spawnHostiles, IChunkStatusListener p_i51537_8_, Supplier<DimensionSavedDataManager> p_i51537_9_) {
@@ -60,11 +63,16 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		cacheThread.start();
 	}
 	/* */
-
+	
 	@Override
 	@Nullable
 	public IChunk getChunk(int chunkX, int chunkZ, ChunkStatus requiredStatus, boolean load) {
 		if (GeneralConfig.disabled || GeneralConfig.disableChunkProvider) {
+			if (ASMHookTerminator.isThreadPooled("Main", Thread.currentThread())) {
+				return CompletableFuture.supplyAsync(() -> {
+		            return this.getChunk(chunkX, chunkZ, requiredStatus, load);
+		         }, this.executor).join();
+			}
 			return super.getChunk(chunkX, chunkZ, requiredStatus, load);
 		}
 		long i = ChunkPos.asLong(chunkX, chunkZ);
@@ -73,12 +81,22 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		if (c != null) {
 			return c;
 		}
-
-		IChunk cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+		
+		if (ASMHookTerminator.isThreadPooled("Main", Thread.currentThread())) {
+			return CompletableFuture.supplyAsync(() -> {
+	            return this.getChunk(chunkX, chunkZ, requiredStatus, load);
+	         }, this.executor).join();
+		}
+		
+		IChunk cl;
+		synchronized (this) {
+			cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+		}
 		cacheChunk(i, cl, requiredStatus);
 		return cl;
 	}
 
+	/* 1.15.2/1.16.2 */
 	@Override
 	@Nullable
 	public Chunk getChunkNow(int chunkX, int chunkZ) {
@@ -95,8 +113,28 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		Chunk cl = super.getChunkNow(chunkX, chunkZ);
 		cacheChunk(i, cl, ChunkStatus.FULL);
 		return cl;
-
 	}
+	/* */
+	
+	/* 1.16.2 because the bad mappings are bad
+	@Override
+	@Nullable
+	public Chunk getChunkWithoutLoading(int chunkX, int chunkZ) {
+		if (GeneralConfig.disabled) {
+			return super.getChunkWithoutLoading(chunkX, chunkZ);
+		}
+		long i = ChunkPos.asLong(chunkX, chunkZ);
+
+		IChunk c = lookupChunk(i, ChunkStatus.FULL);
+		if (c != null) {
+			return (Chunk) c;
+		}
+
+		Chunk cl = super.getChunkWithoutLoading(chunkX, chunkZ);
+		cacheChunk(i, cl, ChunkStatus.FULL);
+		return cl;
+	}
+	*/
 
 	public IChunk lookupChunk(long p_225315_1_, ChunkStatus p_225315_4_) {
 		int oldaccess = access++;

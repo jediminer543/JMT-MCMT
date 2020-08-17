@@ -2,6 +2,9 @@ package org.jmt.mcmt.asmdest;
 
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
@@ -39,11 +42,22 @@ public class ASMHookTerminator {
 	static MinecraftServer mcs;
 	static AtomicBoolean isTicking = new AtomicBoolean();
 	
+	static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
+	
 	// Statistics
 	public static AtomicInteger currentWorlds = new AtomicInteger();
 	public static AtomicInteger currentEnts = new AtomicInteger();
 	public static AtomicInteger currentTEs = new AtomicInteger();
 	public static AtomicInteger currentEnvs = new AtomicInteger();
+	
+	
+	public static void regThread(String poolName, Thread thread) {
+		mcThreadTracker.computeIfAbsent(poolName, s -> ConcurrentHashMap.newKeySet()).add(thread);
+	}
+	
+	public static boolean isThreadPooled(String poolName, Thread t) {
+		return mcThreadTracker.containsKey(poolName) && mcThreadTracker.get(poolName).contains(t);
+	}
 
 	public static void preTick(MinecraftServer server) {
 		if (p != null) {

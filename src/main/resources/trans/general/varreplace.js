@@ -134,6 +134,7 @@ function initializeCoreMod() {
         			"<init>": {
         				"desc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveHandler;Lnet/minecraft/world/storage/WorldInfo;Lnet/minecraft/world/dimension/DimensionType;Lnet/minecraft/profiler/IProfiler;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V",
         				"fallbackdesc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",
+        				"fallbackdesc2": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",
         				"update": function(methodNode) {
         					var instructions = methodNode.instructions;
         					
@@ -244,7 +245,7 @@ function initializeCoreMod() {
             		
             		var op = targetMethods[methodNode.name];
             		if (op != undefined && (op.desc == methodNode.desc || op.fallbackdesc == methodNode.desc)) {
-            			if (op.fallbackdesc == methodNode.desc) {
+            			if (op.fallbackdesc == methodNode.desc || op.fallbackdesc2 == methodNode.desc) {
             				print("[JMTSUPERTRANS] 1.16 WARNING")
             			}
             			print("[JMTSUPERTRANS] updating method: " + methodNode.name + methodNode.desc)
@@ -295,10 +296,13 @@ function initializeCoreMod() {
             			"<init>": { // "Same" for 115 and 1161
             				"desc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveHandler;Lnet/minecraft/world/storage/WorldInfo;Lnet/minecraft/world/dimension/DimensionType;Lnet/minecraft/profiler/IProfiler;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V",
             				"fallbackdesc": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",
+            				"fallbackdesc2": "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",
             				"update": function(methodNode) {
             					var instructions = methodNode.instructions;
             					
             					var initdesc1152 = "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveHandler;Lnet/minecraft/world/storage/WorldInfo;Lnet/minecraft/world/dimension/DimensionType;Lnet/minecraft/profiler/IProfiler;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V";
+            					//TODO USE
+            					var initdesc1162 = "(Lnet/minecraft/server/MinecraftServer;Ljava/util/concurrent/Executor;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lnet/minecraft/world/storage/IServerWorldInfo;Lnet/minecraft/util/RegistryKey;Lnet/minecraft/world/DimensionType;Lnet/minecraft/world/chunk/listener/IChunkStatusListener;Lnet/minecraft/world/gen/ChunkGenerator;ZJLjava/util/List;Z)V",;
             					
             					if (methodNode.desc.equals(initdesc1152)) {
             						version = "1152"
@@ -337,7 +341,7 @@ function initializeCoreMod() {
             		
             		var op = targetMethods[methodNode.name];
             		if (op != undefined && (op.desc == methodNode.desc || op.fallbackdesc == methodNode.desc)) {
-            			if (op.fallbackdesc == methodNode.desc) {
+            			if (op.fallbackdesc == methodNode.desc || op.fallbackdesc2 == methodNode.desc) {
             				print("[JMTSUPERTRANS] 1.16 WARNING")
             			}
             			print("[JMTSUPERTRANS] updating method: " + methodNode.name + methodNode.desc)
