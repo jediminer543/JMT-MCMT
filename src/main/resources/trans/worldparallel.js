@@ -7,7 +7,6 @@ function initializeCoreMod() {
                 	
             },
             'transformer': function(classNode) {
-            	print("[JMTSUPERTRANS] World Transformer Called");
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -18,6 +17,8 @@ function initializeCoreMod() {
             	var LdcInsnNode = Java.type("org.objectweb.asm.tree.LdcInsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
             	var MethodType = asmapi.MethodType;
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] World Transformer Called");
 
             	var methods = classNode.methods;
             	
@@ -34,7 +35,7 @@ function initializeCoreMod() {
             		} else if (!method.desc.equals(targetMethodDesc)) {
             			continue;
             		}
-            		print("[JMTSUPERTRANS]Matched method " + method.name + " " + method.desc);
+            		asmapi.log("DEBUG", "[JMTSUPERTRANS]Matched method " + method.name + " " + method.desc);
             		
             		var instructions = method.instructions;
             		
@@ -56,7 +57,7 @@ function initializeCoreMod() {
             					postTarget = postTarget.getPrevious();
             					postTarget = postTarget.getPrevious();
             				} else if (instruction.cst.equals("connection") && postTarget == null) {
-            					print("WARNING YOU ARE USING 1.16")
+            					asmapi.log("INFO", "YOU ARE USING 1.16 - Says coremods (if this is wrong something borked)")
             					postTarget = instruction;
             					postTarget = postTarget.getPrevious();
             					postTarget = postTarget.getPrevious();
@@ -74,13 +75,13 @@ function initializeCoreMod() {
             		
             		
             		if (callTarget != null && preTarget != null && postTarget != null) {
-            			print("[JMTSUPERTRANS] FOUND TARGET INSNS");
+            			asmapi.log("INFO", "[JMTSUPERTRANS] FOUND TARGET INSNS");
             		} else {
-            			print("[JMTSUPERTRANS] MISSING TARGET INSNS:");
-            			print("[JMTSUPERTRANS] HAVE PRE:" + (preTarget != null));
-            			print("[JMTSUPERTRANS] HAVE POST:" + (postTarget != null));
-            			print("[JMTSUPERTRANS] HAVE CALL:" + (callTarget != null));
-            			return;
+            			asmapi.log("ERROR", "[JMTSUPERTRANS] MISSING TARGET INSNS:");
+            			asmapi.log("ERROR", "[JMTSUPERTRANS] HAVE PRE:" + (preTarget != null));
+            			asmapi.log("ERROR", "[JMTSUPERTRANS] HAVE POST:" + (postTarget != null));
+            			asmapi.log("ERROR", "[JMTSUPERTRANS] HAVE CALL:" + (callTarget != null));
+            			return classNode;
             		}
             		
             		//Call Hook
@@ -127,6 +128,9 @@ function initializeCoreMod() {
             		// Break because this particular coremod only targets one method
             		break;
             	}
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] World Transformer Complete");
+            	
                 return classNode;
             }
         },

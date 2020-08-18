@@ -7,7 +7,6 @@ function initializeCoreMod() {
                 	
             },
             'transformer': function(classNode) {
-            	print("[JMTSUPERTRANS] Entity Transformer Called");
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -16,6 +15,8 @@ function initializeCoreMod() {
             	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
             	var MethodType = asmapi.MethodType;
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] Entity Transformer Called");
 
             	var methods = classNode.methods;
             	
@@ -32,7 +33,7 @@ function initializeCoreMod() {
             		} else if (!method.desc.equals(targetMethodDesc)) {
             			continue;
             		}
-            		print("[JMTSUPERTRANS] Matched method " + method.name + " " + method.desc);
+            		asmapi.log("DEBUG", "[JMTSUPERTRANS] Matched method " + method.name + " " + method.desc);
             		
             		var instructions = method.instructions;
             		
@@ -44,8 +45,8 @@ function initializeCoreMod() {
             				callClass, callMethod, callDesc, 0);
             		
             		if (callTarget == null) {
-            			print("[JMTSUPERTRANS] MISSING TARGET INSN");
-            			return;
+            			asmapi.log("ERROR", "[JMTSUPERTRANS] MISSING TARGET INSN");
+            			return classNode;
             		}
             		
             		// Jump instruction
@@ -60,6 +61,8 @@ function initializeCoreMod() {
             		
             		instructions.insertBefore(callTarget, il);
             		instructions.insert(callTarget, skipTarget);
+            		
+            		asmapi.log("INFO", "[JMTSUPERTRANS] Entity Transformer Complete");
             		
             		break;
             	}

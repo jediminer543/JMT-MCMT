@@ -47,7 +47,7 @@ public class MCMT
         
         StatsCommand.runDataThread();
         
-        ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.CLIENT, GeneralConfig.GENERAL_SPEC);
+        ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, GeneralConfig.GENERAL_SPEC);
     }
 
     private void setup(final FMLCommonSetupEvent event)

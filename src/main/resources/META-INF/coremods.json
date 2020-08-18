@@ -3,6 +3,7 @@
   "entityparallel": "trans/entityparallel.js",
   "envparallel": "trans/envparallel.js",
   "teparallel": "trans/teparallel.js",
+  "scpcoaccess": "trans/general/scpcoaccess.js",
   "generalparallel": "trans/general/generalparallel.js",
   "gen2parallel": "trans/general/gen2parallel.js",
   "varreplace": "trans/general/varreplace.js",

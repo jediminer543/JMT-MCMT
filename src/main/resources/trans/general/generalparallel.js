@@ -52,6 +52,7 @@ function initializeCoreMod() {
             },
             "transformer": synchronizeMethod("SCPTick")
     	},
+    	/*
     	'LevelBasedGraphProcessUpdates': {
             'target': {
                 'type': 'METHOD',
@@ -61,6 +62,7 @@ function initializeCoreMod() {
             },
             "transformer": synchronizeMethod("LevelBasedGraphProcessUpdates")
     	},
+    	*/
     	'ServerTickListTick': {
             'target': {
                 'type': 'METHOD',

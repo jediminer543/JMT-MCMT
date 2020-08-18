@@ -6,8 +6,6 @@ function initializeCoreMod() {
                 'name': 'net.minecraft.world.server.ServerChunkProvider'
             },
             "transformer": function(classNode) {
-            	print("[JMTSUPERTRANS] ServerWorldTickChunk Transformer Called");
-            	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -16,6 +14,8 @@ function initializeCoreMod() {
             	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
             	var MethodType = asmapi.MethodType;
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ServerWorldTickChunk Transformer Called");
             	
             	var methods = classNode.methods;
             	
@@ -28,7 +28,7 @@ function initializeCoreMod() {
             			continue;
             		}
             		
-            		print("[JMTSUPERTRANS] Matched method " + method.name + " " + method.desc);
+            		asmapi.log("DEBUG", "[JMTSUPERTRANS] Matched method " + method.name + " " + method.desc);
             		
             		var instructions = method.instructions;
             		
@@ -40,7 +40,7 @@ function initializeCoreMod() {
             				callClass, callMethod, callDesc, 0);
             		
             		if (callTarget == null) {
-            			print("[JMTSUPERTRANS] MISSING TARGET INSN");
+            			asmapi.log("ERROR", "[JMTSUPERTRANS] MISSING TARGET INSN");
             			return;
             		}
             		
@@ -61,7 +61,7 @@ function initializeCoreMod() {
             	
         		}
             	
-            	print("[JMTSUPERTRANS] ServerWorldTickChunk Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ServerWorldTickChunk Transformer Complete");
             	
             	return classNode;
             }
@@ -72,8 +72,6 @@ function initializeCoreMod() {
 	            'name': 'net.minecraft.world.server.ServerChunkProvider'
 	        },
 	        "transformer": function(classNode) {
-	        	print("[JMTSUPERTRANS] ServerWorldTickChunk Transformer Called");
-	        	
 	        	var opcodes = Java.type('org.objectweb.asm.Opcodes');
 	        	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
 	        	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -82,6 +80,8 @@ function initializeCoreMod() {
 	        	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
 	        	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
 	        	var MethodType = asmapi.MethodType;
+	        	
+	        	asmapi.log("INFO", "[JMTSUPERTRANS] ServerWorldTickChunk116 Transformer Called");
 	        	
 	        	var methods = classNode.methods;
 	        	
@@ -94,7 +94,7 @@ function initializeCoreMod() {
 	        			continue;
 	        		}
 	        		
-	        		print("[JMTSUPERTRANS] Matched method " + method.name + " " + method.desc);
+	        		asmapi.log("DEBUG", "[JMTSUPERTRANS] Matched method " + method.name + " " + method.desc);
 	        		
 	        		var instructions = method.instructions;
 	        		
@@ -106,7 +106,7 @@ function initializeCoreMod() {
 	        				callClass, callMethod, callDesc, 0);
 	        		
 	        		if (callTarget == null) {
-	        			print("[JMTSUPERTRANS] MISSING TARGET INSN");
+	        			asmapi.log("ERROR", "[JMTSUPERTRANS] MISSING TARGET INSN");
 	        			return;
 	        		}
 	        		
@@ -127,7 +127,7 @@ function initializeCoreMod() {
 	        	
 	    		}
 	        	
-	        	print("[JMTSUPERTRANS] ServerWorldTickChunk Transformer Complete");
+	        	asmapi.log("INFO", "[JMTSUPERTRANS] ServerWorldTickChunk116 Transformer Complete");
 	        	
 	        	return classNode;
 	        }

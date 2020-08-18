@@ -113,26 +113,6 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		return cl;
 	}
 	/* */
-	
-	/* 1.16.2 because the bad mappings are bad
-	@Override
-	@Nullable
-	public Chunk getChunkWithoutLoading(int chunkX, int chunkZ) {
-		if (GeneralConfig.disabled) {
-			return super.getChunkWithoutLoading(chunkX, chunkZ);
-		}
-		long i = ChunkPos.asLong(chunkX, chunkZ);
-
-		IChunk c = lookupChunk(i, ChunkStatus.FULL);
-		if (c != null) {
-			return (Chunk) c;
-		}
-
-		Chunk cl = super.getChunkWithoutLoading(chunkX, chunkZ);
-		cacheChunk(i, cl, ChunkStatus.FULL);
-		return cl;
-	}
-	*/
 
 	public IChunk lookupChunk(long p_225315_1_, ChunkStatus p_225315_4_) {
 		int oldaccess = access++;
