@@ -76,3 +76,5 @@ forge*changelog.txt
 # OTHER STUFF #
 ###############
 # TODO
+consolelog.log
+src/main/resources/META-INF/mods.toml

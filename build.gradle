@@ -153,6 +153,40 @@ jar {
     }
 }
 
+task cleanModToml(type: Delete) {
+  delete 'src/main/resources/META-INF/mods.toml'
+  followSymlinks = true
+}
+
+import org.apache.tools.ant.filters.*
+
+task generateModToml(type: Copy) {
+	def fgMajor = fg_ver.tokenize(".")[0]
+	from 'src/main/resources/META-INF/template'
+    into 'src/main/resources/META-INF'
+    filter(ReplaceTokens, tokens: [
+        FORGE_VER: fgMajor, 
+        MC_VER: mc_ver
+    ])
+}
+
+configure(cleanModToml) {   
+	group = 'Build'
+	description = 'Clean in the mod toml'
+}
+
+clean.dependsOn cleanModToml
+generateModToml.dependsOn cleanModToml
+
+
+configure(generateModToml) {   
+	group = 'Build'
+	description = 'Fill in the mod toml'
+}
+
+processResources.dependsOn generateModToml
+
+
 // Example configuration to allow publishing using the maven-publish task
 // This is the preferred method to reobfuscate your jar file
 jar.finalizedBy('reobfJar') 
