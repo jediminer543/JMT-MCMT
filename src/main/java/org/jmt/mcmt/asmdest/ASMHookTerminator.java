@@ -1,6 +1,7 @@
 package org.jmt.mcmt.asmdest;
 
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -143,7 +144,8 @@ public class ASMHookTerminator {
 		if (GeneralConfig.teBlackList.contains(tte.getClass())) {
 			isLocking = true;
 		}
-		if (!isLocking && GeneralConfig.chunkLockModded && !tte.getClass().getPackage().equals(Package.getPackage("net.minecraft.tileentity"))) {
+		// Apparently a string starts with check is faster than Class.getPackage; who knew (I didn't)
+		if (!isLocking && GeneralConfig.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.tileentity.")) {
 			isLocking = true;
 		}
 		if (isLocking && GeneralConfig.teWhiteList.contains(tte.getClass())) {

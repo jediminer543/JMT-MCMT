@@ -2,6 +2,7 @@ package org.jmt.mcmt.paralelised.fastutil;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -13,6 +14,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.longs.LongListIterator;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
@@ -409,5 +411,121 @@ public class FastUtilHackUtil {
 
 	public static <K> ObjectCollection<K> wrap(Collection<K> c) {
 		return new WrappingObjectCollection<K>(c);
+	}
+	
+	public static class WrappingLongListIterator implements LongListIterator {
+		
+		ListIterator<Long> backing;
+		
+		public WrappingLongListIterator(ListIterator<Long> backing) {
+			this.backing = backing;
+		}
+
+		@Override
+		public long previousLong() {
+			return backing.previous();
+		}
+
+		@Override
+		public long nextLong() {
+			return backing.next();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return backing.hasNext();
+		}
+
+		@Override
+		public boolean hasPrevious() {
+			return backing.hasPrevious();
+		}
+
+		@Override
+		public int nextIndex() {
+			return backing.nextIndex();
+		}
+
+		@Override
+		public int previousIndex() {
+			return backing.previousIndex();
+		}
+		
+		@Override
+		public void add(long k) {
+			backing.add(k);
+		}
+		
+		@Override
+		public void remove() {
+			backing.remove();
+		}
+		
+		@Override
+		public void set(long k) {
+			backing.set(k);
+		}
+	}
+	
+	public static class SlimWrappingLongListIterator implements LongListIterator {
+		
+		Iterator<Long> backing;
+		
+		public SlimWrappingLongListIterator(Iterator<Long> backing) {
+			this.backing = backing;
+		}
+
+		@Override
+		public long previousLong() {
+			throw new IllegalStateException();
+		}
+
+		@Override
+		public long nextLong() {
+			return backing.next();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return backing.hasNext();
+		}
+
+		@Override
+		public boolean hasPrevious() {
+			throw new IllegalStateException();
+		}
+
+		@Override
+		public int nextIndex() {
+			throw new IllegalStateException();
+		}
+
+		@Override
+		public int previousIndex() {
+			throw new IllegalStateException();
+		}
+		
+		@Override
+		public void add(long k) {
+			throw new IllegalStateException();
+		}
+		
+		@Override
+		public void remove() {
+			backing.remove();
+		}
+		
+		@Override
+		public void set(long k) {
+			throw new IllegalStateException();
+		}
+	}
+	
+	public static LongListIterator wrap(ListIterator<Long> c) {
+		return new WrappingLongListIterator(c);
+	}
+	
+	public static LongListIterator wrap(Iterator<Long> c) {
+		return new SlimWrappingLongListIterator(c);
 	}
 }

@@ -139,7 +139,7 @@ function initializeCoreMod() {
             	
             	var instructions = methodNode.instructions;
             	
-            	methodNode.access += opcodes.ACC_SYNCHRONIZED;
+            	//methodNode.access += opcodes.ACC_SYNCHRONIZED;
             	
             	var target = asmapi.findFirstInstruction(methodNode, opcodes.GETFIELD);
             	var target = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, instructions.indexOf(target)+1);

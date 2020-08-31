@@ -364,5 +364,48 @@ function initializeCoreMod() {
             	return classNode;
             }
     	},
+    	'LevelBasedGraph-UpdatesByLevel': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.lighting.LevelBasedGraph',
+                "methodName": "<init>",
+        		"methodDesc": "(III)V"
+            },
+            "transformer": function(methodNode) {
+            	//mv.visitMethodInsn(INVOKESPECIAL, "net/minecraft/world/lighting/LevelBasedGraph$1", "<init>", "(Lnet/minecraft/world/lighting/LevelBasedGraph;IFI)V", false);
+
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+            	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+            	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+            	var FieldNode = Java.type("org.objectweb.asm.tree.FieldNode");
+            	var LabelNode = Java.type("org.objectweb.asm.tree.LabelNode");
+            	var TypeInsnNode = Java.type("org.objectweb.asm.tree.TypeInsnNode");
+            	var MethodType = asmapi.MethodType;
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] LevelBasedGraph-UpdatesByLevel Transformer Called");
+            	
+            	var initTgt = asmapi.findFirstMethodCall(methodNode, MethodType.SPECIAL, 
+            			"net/minecraft/world/lighting/LevelBasedGraph$1", "<init>", "(Lnet/minecraft/world/lighting/LevelBasedGraph;IFI)V");
+            	
+            	var il = new InsnList();
+            	il.add(new InsnNode(opcodes.POP))
+            	il.add(new TypeInsnNode(opcodes.NEW, "org/jmt/mcmt/paralelised/fastutil/ConcurrentLongLinkedOpenHashSet"))
+            	il.add(new InsnNode(opcodes.DUP))
+            	il.add(new MethodInsnNode(opcodes.INVOKESPECIAL, 
+            			"org/jmt/mcmt/paralelised/fastutil/ConcurrentLongLinkedOpenHashSet", "<init>",
+            			"()V"))
+            			
+            	var instructions = methodNode.instructions;
+            	
+            	instructions.insert(initTgt, il);
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] LevelBasedGraph-UpdatesByLevel Transformer Complete");
+            	
+            	return methodNode;
+            }
+    	},
     }
 }
