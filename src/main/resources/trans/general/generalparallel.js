@@ -1,12 +1,14 @@
 function synchronizeMethod(debugLine) {
 	return function(methodNode) {
-		print("[JMTSUPERTRANS] " + debugLine + " Transformer Called");
+		var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+		
+		asmapi.log("INFO", "[JMTSUPERTRANS] " + debugLine + " Transformer Called");
 		
 		var opcodes = Java.type('org.objectweb.asm.Opcodes');
 		
 		methodNode.access += opcodes.ACC_SYNCHRONIZED;
 		
-		print("[JMTSUPERTRANS] " + debugLine + " Transformer Complete");
+		asmapi.log("INFO", "[JMTSUPERTRANS] " + debugLine + " Transformer Complete");
 		
 		return methodNode;
 	}
@@ -150,6 +152,26 @@ function initializeCoreMod() {
         		"methodDesc": "(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;)V"
             },
             "transformer": synchronizeMethod("ServerWorldOnBlockStateChange")
+    	},
+    	//processUpdates net.minecraft.world.lighting.LevelBasedGraph func_215483_b(I)I
+    	'LevelBasedGraph-processUpdates': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.lighting.LevelBasedGraph',
+                "methodName": "func_215483_b",
+        		"methodDesc": "(I)I"
+            },
+            "transformer": synchronizeMethod("LevelBasedGraph-processUpdates")
+    	},
+    	//public net.minecraft.world.lighting.LevelBasedGraph func_215469_a(JJIZ)V # scheduleUpdate
+    	'LevelBasedGraph-scheduleUpdate': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.lighting.LevelBasedGraph',
+                "methodName": "func_215469_a",
+        		"methodDesc": "(JJIZ)V"
+            },
+            "transformer": synchronizeMethod("LevelBasedGraph-scheduleUpdate")
     	},
     	'POIManager_func_219149_a_': {
             'target': {

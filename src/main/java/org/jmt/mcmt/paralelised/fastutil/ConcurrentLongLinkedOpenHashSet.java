@@ -2,11 +2,7 @@ package org.jmt.mcmt.paralelised.fastutil;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import it.unimi.dsi.fastutil.longs.LongArrays;
 import it.unimi.dsi.fastutil.longs.LongCollection;

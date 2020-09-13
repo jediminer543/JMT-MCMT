@@ -26,9 +26,7 @@ function initializeCoreMod() {
         		
         		var callTarget = asmapi.findFirstMethodCallAfter(methodNode, MethodType.STATIC, 
         				callClass, callMethod, callDesc, 0);
-        		
-        		methodNode.maxStack += 1;
-            	
+        		            	
             	var il = new InsnList();
             	// Purge old arrayList
             	il.add(new InsnNode(opcodes.POP));

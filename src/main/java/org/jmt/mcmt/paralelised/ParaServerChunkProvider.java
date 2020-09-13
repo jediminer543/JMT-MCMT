@@ -35,7 +35,7 @@ import net.minecraft.world.storage.SaveFormat.LevelSave;
 
 public class ParaServerChunkProvider extends ServerChunkProvider {
 
-	protected Map<Long, ChunkCacheLine> chunkCache = new ConcurrentHashMap<Long, ParaServerChunkProvider.ChunkCacheLine>();
+	protected Map<ChunkCacheAddress, ChunkCacheLine> chunkCache = new ConcurrentHashMap<ChunkCacheAddress, ChunkCacheLine>();
 	protected int access = Integer.MIN_VALUE;
 	protected static final int CACHE_SIZE = 64;
 	protected Thread cacheThread;
@@ -114,15 +114,15 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	}
 	/* */
 
-	public IChunk lookupChunk(long p_225315_1_, ChunkStatus p_225315_4_) {
+	public IChunk lookupChunk(long chunkPos, ChunkStatus status) {
 		int oldaccess = access++;
 		if (access < oldaccess) {
 			// Long Rollover so super rare
 			chunkCache.clear();
 			return null;
 		}
-		ChunkCacheLine ccl = chunkCache.get(p_225315_1_);
-		if (ccl != null && ccl.status == p_225315_4_) {
+		ChunkCacheLine ccl = chunkCache.get(new ChunkCacheAddress(chunkPos, status));
+		if (ccl != null) {
 			ccl.updateLastAccess();
 			return ccl.getChunk();
 		}
@@ -136,12 +136,12 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 			chunkCache.clear();
 		}
 		ChunkCacheLine ccl;
-		if ((ccl = chunkCache.get(chunkPos)) != null) {
+		if ((ccl = chunkCache.get(new ChunkCacheAddress(chunkPos, status))) != null) {
 			ccl.updateLastAccess();
 			ccl.updateChunkRef(chunk);
 		}
-		ccl = new ChunkCacheLine(chunk, status);
-		chunkCache.put(chunkPos, ccl);
+		ccl = new ChunkCacheLine(chunk);
+		chunkCache.put(new ChunkCacheAddress(chunkPos, status), ccl);
 	}
 
 	Logger log = LogManager.getLogger();
@@ -149,6 +149,11 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	public void chunkCacheCleanup() {
 		while (world == null || world.getServer() == null) {
 			log.debug("ChunkCleaner Waiting for startup");
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		while (world.getServer().isServerRunning()) {
 			try {
@@ -164,7 +169,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 			long minAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).min()
 					.orElseGet(() -> Integer.MIN_VALUE);
 			long cutoff = minAccess + (long) ((maxAccess - minAccess) / ((float) size / ((float) CACHE_SIZE)));
-			for (Entry<Long, ChunkCacheLine> l : chunkCache.entrySet()) {
+			for (Entry<ChunkCacheAddress, ChunkCacheLine> l : chunkCache.entrySet()) {
 				if (l.getValue().getLastAccess() < cutoff | l.getValue().getChunk() == null) {
 					chunkCache.remove(l.getKey());
 				}
@@ -172,28 +177,49 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		}
 		log.debug("ChunkCleaner terminating");
 	}
+	
+	protected class ChunkCacheAddress {
+		
+		protected long chunk;
+		protected ChunkStatus status;
+		
+		public ChunkCacheAddress(long chunk, ChunkStatus status) {
+			super();
+			this.chunk = chunk;
+			this.status = status;
+		}
+		
+		@Override
+		public int hashCode() {
+			return Long.hashCode(chunk) ^ status.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof ChunkCacheAddress) {
+				if ((((ChunkCacheAddress) obj).chunk == chunk) && (((ChunkCacheAddress) obj).status.equals(status))) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
 
 	protected class ChunkCacheLine {
 		WeakReference<IChunk> chunk;
-		ChunkStatus status;
 		int lastAccess;
 
-		public ChunkCacheLine(IChunk chunk, ChunkStatus status) {
-			this(chunk, status, access);
+		public ChunkCacheLine(IChunk chunk) {
+			this(chunk, access);
 		}
 
-		public ChunkCacheLine(IChunk chunk, ChunkStatus status, int lastAccess) {
+		public ChunkCacheLine(IChunk chunk, int lastAccess) {
 			this.chunk = new WeakReference<>(chunk);
-			this.status = status;
 			this.lastAccess = lastAccess;
 		}
 
 		public IChunk getChunk() {
 			return chunk.get();
-		}
-
-		public ChunkStatus getStatus() {
-			return status;
 		}
 
 		public int getLastAccess() {

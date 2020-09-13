@@ -61,7 +61,7 @@ public class Int2ObjectConcurrentHashMap<V> implements Int2ObjectMap<V> {
 		
 	@Override
 	public IntSet keySet() {
-		return FastUtilHackUtil.wrap(backing.keySet());
+		return FastUtilHackUtil.wrapIntSet(backing.keySet());
 	}
 
 	@Override
