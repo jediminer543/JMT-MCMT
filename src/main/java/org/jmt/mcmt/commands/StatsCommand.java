@@ -107,6 +107,12 @@ public class StatsCommand {
 	public static void resetAll() {
 		resetThreadStats = true;
 	}
+	
+	static int warningDelay = 15000;
+	
+	public static void resetWarnDelay() {
+		warningDelay = 15000;
+	}
 
 	public static void runDataThread() {
 		statsThread = new Thread(() -> {
@@ -186,8 +192,10 @@ public class StatsCommand {
 						}
 
 						warnLog++;
-						if (warnLog % 15000 == 0) {
+						if (warnLog % warningDelay == 0) {
 							mtlog.warn("MCMT is enabled; error logs are invalid for any other mods");
+							warningDelay *= 1.2;
+							warningDelay = Math.min(warningDelay, 720000); // Max delay ~~ 2 hours
 						}
 					}
 				} catch (Exception e) {
