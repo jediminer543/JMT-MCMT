@@ -1,19 +1,19 @@
 {
   "homepage": "https://github.com/jediminer543/JMT-MCMT",
   "1.16.3": {
-    "0.17.53": "Added update checking",
+    "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "1.16.2": {
-    "0.17.53": "Added update checking",
+    "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "1.16.1": {
-    "0.17.53": "Added update checking",
+    "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "1.15.2": {
-    "0.17.53": "Added update checking",
+    "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "promos": {

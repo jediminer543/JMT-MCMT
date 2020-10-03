@@ -15,7 +15,14 @@ apply plugin: 'maven-publish'
 
 version = "${mcmt_ver}"
 group = 'org.jmt.mcmt' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "jmt_mcmt-${mc_ver}"
+archivesBaseName = "jmt_mcmt"
+
+sourceSets {
+	syncfu {
+		compileClasspath += sourceSets.main.runtimeClasspath
+		compileClasspath += sourceSets.main.compileClasspath
+	}
+}
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
@@ -39,26 +46,13 @@ minecraft {
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
+            
+            //property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
 
             mods {
                 jmt_mcmt {
                     source sourceSets.main
-                }
-            }
-        }
-        
-        clientDebug {
-            workingDirectory project.file('run')
-
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                jmt_mcmt {
-                    source sourceSets.main
+                    source sourceSets.syncfu
                 }
             }
         }
@@ -68,26 +62,13 @@ minecraft {
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
+            
+            //property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
 
             mods {
                 jmt_mcmt {
                     source sourceSets.main
-                }
-            }
-        }
-        
-        serverDebug {
-            workingDirectory project.file('run')
-
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-
-            // Recommended logging level for the console
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                jmt_mcmt {
-                    source sourceSets.main
+                    source sourceSets.syncfu
                 }
             }
         }
@@ -106,6 +87,7 @@ minecraft {
             mods {
                 jmt_mcmt {
                     source sourceSets.main
+                    source sourceSets.syncfu
                 }
             }
         }
@@ -140,6 +122,8 @@ dependencies {
 
 // Example for how to get properties into the manifest for reading by the runtime..
 jar {
+	from sourceSets.main.output
+	classifier "${mc_ver}"
     manifest {
         attributes([
             "Specification-Title": "jmt_mcmt",
@@ -152,6 +136,19 @@ jar {
         ])
     }
 }
+
+
+task syncFuJar(type: Jar) {
+	from sourceSets.syncfu.output
+	classifier 'syncfu'
+} 
+
+configure(syncFuJar) {   
+	group = 'Build'
+	description = 'Create the syncfu jar'
+}
+
+build.dependsOn syncFuJar
 
 task cleanModToml(type: Delete) {
   delete 'src/main/resources/META-INF/mods.toml'
