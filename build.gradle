@@ -137,6 +137,16 @@ jar {
     }
 }
 
+task combiJar(type: Jar) {
+	from sourceSets.main.output
+	from sourceSets.syncfu.output
+	classifier "${mc_ver}-combi"
+} 
+
+configure(combiJar) {   
+	group = 'Build'
+	description = 'Create a combined mod syncfu jar'
+}
 
 task syncFuJar(type: Jar) {
 	from sourceSets.syncfu.output
