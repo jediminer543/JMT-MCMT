@@ -2,17 +2,26 @@ package org.jmt.mcmt.modlauncher;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.spi.FileSystemProvider;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,30 +37,23 @@ import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.ITransformerVotingContext;
 import cpw.mods.modlauncher.api.IncompatibleEnvironmentException;
 import cpw.mods.modlauncher.api.TransformerVoteResult;
+import net.minecraftforge.fml.loading.FMLPaths;
 
-public class FastUtilTransformerService implements ITransformer<ClassNode>, ITransformationService {
+public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITransformationService {
 
 	private static final Logger LOGGER = LogManager.getLogger();
+	private static final Marker M_LOCATOR = MarkerManager.getMarker("LOCATE");
 	private boolean isActive = true;
 	
 	@Override
 	public String name() {
 		return "sync_fu";
 	}
-
-	@Override
-	public void initialize(IEnvironment environment) {}
-
-	@Override
-	public void beginScanning(IEnvironment environment) {}
-
-	@Override
-	public void onLoad(IEnvironment env, Set<String> otherServices) throws IncompatibleEnvironmentException {}
-	
 	
 	@Override
 	public Entry<Set<String>, Supplier<Function<String, Optional<URL>>>> additionalClassesLocator() {
 		LOGGER.info("Sync_Fu preparing...");
+		LOGGER.info("Prepping fu_add...");
 		Optional<URL> fujarurl = Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator)).flatMap(path -> {
         	File file = new File(path);
         	if (file.isDirectory()) {
@@ -118,6 +120,7 @@ public class FastUtilTransformerService implements ITransformer<ClassNode>, ITra
 	@SuppressWarnings("rawtypes")
 	@Override
 	public List<ITransformer> transformers() {
+		
 		List<ITransformer> out = new ArrayList<>();
 		out.add(this);
 		return out;
@@ -160,5 +163,61 @@ public class FastUtilTransformerService implements ITransformer<ClassNode>, ITra
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap"));
 		return out;
 	}
+	
+	@Override
+	public void initialize(IEnvironment environment) {
+		
+	}
+
+	@Override
+	public void beginScanning(IEnvironment environment) {
+		System.out.println("HAI1");
+		/*
+		try {
+			Field f = FMLLoader.class.getDeclaredField("coreModProvider");
+			f.setAccessible(true);
+			ICoreModProvider icmp = (ICoreModProvider) f.get(null);
+			f.set(null, new FakeCoreModProvider(icmp));
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		*/
+		try {
+			CodeSource src = SyncFuLocator.class.getProtectionDomain().getCodeSource();
+			URL jar = src.getLocation();
+			if (!jar.toString().endsWith(".jar")) {
+				LOGGER.warn(M_LOCATOR, "This be dev!!!");
+				return;
+			}
+			URI uri = new URI("jar:".concat(jar.toString()).concat("!/"));
+			//Thanks SO https://stackoverflow.com/a/48298758
+			for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
+		        if (provider.getScheme().equalsIgnoreCase("jar")) {
+		            try {
+		                provider.getFileSystem(uri);
+		            } catch (FileSystemNotFoundException e) {
+		                // in this case we need to initialize it first:
+		                provider.newFileSystem(uri, Collections.emptyMap());
+		            }
+		        }
+		    }
+	        Path myPath = Paths.get(uri);
+	        System.out.println(myPath);
+	        Stream<Path> walk = Files.walk(myPath, 1).peek(p -> LOGGER.warn(M_LOCATOR, "Found {}", p)).filter(p -> p.toString().endsWith(".jar"));
+	        Path root = FMLPaths.MODSDIR.get();
+	        for (Iterator<Path> it = walk.iterator(); it.hasNext();){
+	        	Path file = it.next();
+	        	LOGGER.info(M_LOCATOR, "Found target jar: {}", file);
+	        	Files.copy(file, root.resolve(file.getFileName().toString()));
+	        }
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onLoad(IEnvironment env, Set<String> otherServices) throws IncompatibleEnvironmentException {}
 
 }

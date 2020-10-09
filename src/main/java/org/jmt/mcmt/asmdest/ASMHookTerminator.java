@@ -38,7 +38,8 @@ public class ASMHookTerminator {
 	private static final Logger LOGGER = LogManager.getLogger();
 	
 	static Phaser p;
-	static ExecutorService ex = Executors.newWorkStealingPool();
+	static ExecutorService ex = GeneralConfig.paraMax <= 1 ? Executors.newWorkStealingPool() : 
+		Executors.newWorkStealingPool(Math.max(2, Math.min(Runtime.getRuntime().availableProcessors(), GeneralConfig.paraMax)));
 	static MinecraftServer mcs;
 	static AtomicBoolean isTicking = new AtomicBoolean();
 	

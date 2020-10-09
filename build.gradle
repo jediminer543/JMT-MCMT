@@ -15,7 +15,7 @@ apply plugin: 'maven-publish'
 
 version = "${mcmt_ver}"
 group = 'org.jmt.mcmt' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "jmt_mcmt"
+archivesBaseName = "jmt_mcmt-${mc_ver}"
 
 sourceSets {
 	syncfu {
@@ -51,8 +51,10 @@ minecraft {
 
             mods {
                 jmt_mcmt {
-                    source sourceSets.main
-                    source sourceSets.syncfu
+                    source sourceSets.main                    
+                }
+                jmt_mcmt_syncfu {
+                	source sourceSets.syncfu
                 }
             }
         }
@@ -68,7 +70,9 @@ minecraft {
             mods {
                 jmt_mcmt {
                     source sourceSets.main
-                    source sourceSets.syncfu
+                }
+                jmt_mcmt_syncfu {
+                	source sourceSets.syncfu
                 }
             }
         }
@@ -87,7 +91,9 @@ minecraft {
             mods {
                 jmt_mcmt {
                     source sourceSets.main
-                    source sourceSets.syncfu
+                }
+                jmt_mcmt_syncfu {
+                	source sourceSets.syncfu
                 }
             }
         }
@@ -121,9 +127,9 @@ dependencies {
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
-jar {
+jar {	
 	from sourceSets.main.output
-	classifier "${mc_ver}"
+	classifier "modcore"
     manifest {
         attributes([
             "Specification-Title": "jmt_mcmt",
@@ -137,28 +143,20 @@ jar {
     }
 }
 
-task combiJar(type: Jar) {
-	from sourceSets.main.output
+
+
+task fullJar(type: Jar) {
 	from sourceSets.syncfu.output
-	classifier "${mc_ver}-combi"
+	from jar.outputs.files
+	dependsOn jar
 } 
 
-configure(combiJar) {   
+configure(fullJar) {   
 	group = 'Build'
-	description = 'Create a combined mod syncfu jar'
+	description = 'Create the full mod'
 }
 
-task syncFuJar(type: Jar) {
-	from sourceSets.syncfu.output
-	classifier 'syncfu'
-} 
-
-configure(syncFuJar) {   
-	group = 'Build'
-	description = 'Create the syncfu jar'
-}
-
-build.dependsOn syncFuJar
+build.dependsOn fullJar
 
 task cleanModToml(type: Delete) {
   delete 'src/main/resources/META-INF/mods.toml'
@@ -192,7 +190,6 @@ configure(generateModToml) {
 }
 
 processResources.dependsOn generateModToml
-
 
 // Example configuration to allow publishing using the maven-publish task
 // This is the preferred method to reobfuscate your jar file

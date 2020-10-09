@@ -36,6 +36,7 @@ import net.minecraftforge.fml.config.ModConfig;
 public class GeneralConfig {
 
 	public static boolean disabled;
+	public static int paraMax;
 
 	public static boolean disableWorld;
 
@@ -80,6 +81,8 @@ public class GeneralConfig {
 	 */
 	public static void bakeConfig() {
 		disabled = GENERAL.disabled.get();
+		paraMax = GENERAL.paraMax.get();
+		
 		disableWorld = GENERAL.disableWorld.get();
 		disableEntity = GENERAL.disableEntity.get();
 		disableTileEntity = GENERAL.disableTileEntity.get();
@@ -118,6 +121,8 @@ public class GeneralConfig {
 	
 	public static void saveConfig() {
 		GENERAL.disabled.set(disabled);
+		GENERAL.paraMax.set(paraMax);
+		
 		GENERAL.disableWorld.set(disableWorld);
 		GENERAL.disableEntity.set(disableEntity);
 		GENERAL.disableTileEntity.set(disableTileEntity);
@@ -143,6 +148,7 @@ public class GeneralConfig {
 	public static class GeneralConfigTemplate {
 
 		public final BooleanValue disabled;
+		public final IntValue paraMax;
 		
 		public final BooleanValue disableWorld;
 		
@@ -164,6 +170,11 @@ public class GeneralConfig {
 			disabled = builder
 					.comment("Globally disable all toggleable functionality")
 					.define("disabled", false);
+			paraMax = builder
+					.comment("Maximum amount of threads; will never create more threads\n"
+							+ "than there are CPU threads (as that causeses Context switch churning)\n"
+							+ "Values <=1 are treated as 'all cores'")
+					.defineInRange("timeoutCount", -1, -1, Integer.MAX_VALUE);
 			builder.push("world");
 			disableWorld = builder
 					.comment("Disable world parallelisation")
@@ -201,6 +212,7 @@ public class GeneralConfig {
 			disableChunkProvider = builder
 					.comment("Disable parallelised chunk caching; doing this will result in much lower performance with little to no gain")
 					.define("disableChunkProvider", false);
+			builder.push("load-forcing");
 			enableChunkTimeout = builder
 					.comment("Enable chunk loading timeouts; this will forcably kill any chunks that fail to load in sufficient time\n"
 							+"may allow for loading of damaged/corrupted worlds")
