@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,16 +34,54 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerTickList;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.fml.CrashReportExtender;
 
+/**
+ * This is where all current ASM hooks are terminated
+ * 
+ * So DON'T rename this file (Or there will be a lot of other work todo)
+ * 
+ * Fun point: So because this is hooking into a lot of the stuff, be careful what you reference here
+ * I attempted to reference a function on {@link GeneralConfig} and it got VERY angery at me with a "class refuses to load" error
+ * So remember that if you start getting class loading errors
+ * 
+ * 
+ * TODO: Add more docs
+ * 
+ * @author jediminer543
+ *
+ */
 public class ASMHookTerminator {
 
 	private static final Logger LOGGER = LogManager.getLogger();
 	
 	static Phaser p;
-	static ExecutorService ex = GeneralConfig.paraMax <= 1 ? Executors.newWorkStealingPool() : 
-		Executors.newWorkStealingPool(Math.max(2, Math.min(Runtime.getRuntime().availableProcessors(), GeneralConfig.paraMax)));
+	static ExecutorService ex;
 	static MinecraftServer mcs;
 	static AtomicBoolean isTicking = new AtomicBoolean();
+	static AtomicInteger threadID = new AtomicInteger();
+	
+	
+	public static void setupThreadpool(int parallelism) {
+		threadID = new AtomicInteger();
+		ForkJoinWorkerThreadFactory fjpf = p -> {
+			ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
+			fjwt.setName("MCMT-Pool-Thread-"+threadID.getAndIncrement());
+			return fjwt;
+		};
+		ex = new ForkJoinPool(
+				parallelism,
+				 fjpf,
+	             null, true);
+	}
+	
+	/**
+	 * Creates and sets up the thread pool
+	 */
+	static {
+		// Must be static here due to class loading shenanagins
+		setupThreadpool(4);
+	}
 	
 	static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
 	
@@ -50,6 +90,9 @@ public class ASMHookTerminator {
 	public static AtomicInteger currentEnts = new AtomicInteger();
 	public static AtomicInteger currentTEs = new AtomicInteger();
 	public static AtomicInteger currentEnvs = new AtomicInteger();
+	
+	//Operation logging
+	public static Set<String> currentTasks = ConcurrentHashMap.newKeySet(); 
 	
 	
 	public static void regThread(String poolName, Thread thread) {
@@ -90,6 +133,8 @@ public class ASMHookTerminator {
 			serverworld.tick(hasTimeLeft);
 			return;
 		} else {
+			String taskName = "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
+			if (GeneralConfig.opsTracing) currentTasks.add(taskName);
 			p.register();
 			ex.execute(() -> {
 				try {
@@ -99,6 +144,7 @@ public class ASMHookTerminator {
 				} finally {
 					p.arriveAndDeregister();
 					currentWorlds.decrementAndGet();
+					if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
 				}
 			});
 		}
@@ -110,6 +156,8 @@ public class ASMHookTerminator {
 			entityIn.tick();
 			return;
 		}
+		String taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
+		if (GeneralConfig.opsTracing) currentTasks.add(taskName);
 		p.register();
 		ex.execute(() -> {
 			try {
@@ -118,6 +166,7 @@ public class ASMHookTerminator {
 			} finally {
 				currentEnts.decrementAndGet();
 				p.arriveAndDeregister();
+				if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
 			}
 		});
 	}
@@ -127,6 +176,8 @@ public class ASMHookTerminator {
 			world.tickEnvironment(chunk, k);
 			return;
 		}
+		String taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
+		if (GeneralConfig.opsTracing) currentTasks.add(taskName);
 		p.register();
 		ex.execute(() -> {
 			try {
@@ -135,6 +186,7 @@ public class ASMHookTerminator {
 			} finally {
 				currentEnvs.decrementAndGet();
 				p.arriveAndDeregister();
+				if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
 			}
 		});
 	}
@@ -162,6 +214,8 @@ public class ASMHookTerminator {
 			tte.tick();
 			return;
 		}
+		String taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
+		if (GeneralConfig.opsTracing) currentTasks.add(taskName);
 		p.register();
 		ex.execute(() -> {
 			try {
@@ -185,6 +239,7 @@ public class ASMHookTerminator {
 			} finally {
 				currentTEs.decrementAndGet();
 				p.arriveAndDeregister();
+				if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
 			}
 		});
 	}
@@ -217,11 +272,54 @@ public class ASMHookTerminator {
 		}
 	}
 	
-	Deque<BlockEventData> test;
+	public static String populateCrashReport() {
+		StringBuilder confInfo = new StringBuilder();
+		confInfo.append("\n");
+		confInfo.append("\t"); confInfo.append("Config Info:"); confInfo.append("\n");
+		confInfo.append("\t"); confInfo.append("\t- Disabled: "); 
+		confInfo.append(GeneralConfig.disabled); confInfo.append("\n");
+		confInfo.append("\t"); confInfo.append("\t- World Disabled: "); 
+		confInfo.append(GeneralConfig.disableWorld); confInfo.append("\n");
+		confInfo.append("\t"); confInfo.append("\t- Entity Disabled: "); 
+		confInfo.append(GeneralConfig.disableEntity); confInfo.append("\n");
+		confInfo.append("\t"); confInfo.append("\t- Env Disabled: "); 
+		confInfo.append(GeneralConfig.disableEnvironment); confInfo.append("\n");
+		confInfo.append("\t"); confInfo.append("\t- TE Disabled: "); 
+		confInfo.append(GeneralConfig.disableTileEntity); confInfo.append("\n");
+		confInfo.append("\t"); confInfo.append("\t- SCP Disabled: "); 
+		confInfo.append(GeneralConfig.disableChunkProvider); confInfo.append("\n");
+		if (GeneralConfig.opsTracing) {
+			confInfo.append("\t"); confInfo.append("-- Running Operations Begin -- "); confInfo.append("\n");
+			for (String s : currentTasks) {
+				confInfo.append("\t"); confInfo.append("\t"); confInfo.append(s); confInfo.append("\n");
+			}
+			confInfo.append("\t"); confInfo.append("-- Running Operations End -- "); confInfo.append("\n");
+		}
+		return confInfo.toString();
+	}
 	
+	static {
+		CrashReportExtender.registerCrashCallable("MCMT", ASMHookTerminator::populateCrashReport);
+	}
+		
 	public static <T> void fixSTL(ServerTickList<T> stl) {
 		LOGGER.debug("FixSTL Called");
 		stl.pendingTickListEntriesTreeSet.addAll(stl.pendingTickListEntriesHashSet);
 	}
+	
+	//Below is debug code for science reasons
+	/*
+	 * 	static Random debugRand = new Random();
+	//Debug section begin
+	if (true) {
+		try {
+			LOGGER.error("Locking");
+			Thread.sleep(100000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	//End Debug Section
+	*/
 }
 

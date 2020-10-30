@@ -8,10 +8,10 @@ function initializeCoreMod() {
         		"methodDesc": "()Ljava/util/List;"
             },
             "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] DebugScreenPatch Transformer Called");
-            	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] DebugScreenPatch Transformer Called");
             	
             	var tgtStr = "Integrated server";
             	var newStr = "Integrated multithreaded server";
@@ -24,7 +24,7 @@ function initializeCoreMod() {
             		target.cst = target.cst.replace(tgtStr, newStr)
             	}
             	
-            	print("[JMTSUPERTRANS] DebugScreenPatch Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] DebugScreenPatch Transformer Complete");
             	
             	return methodNode;
             }

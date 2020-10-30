@@ -13,7 +13,6 @@ function initializeCoreMod() {
         		"methodDesc": "(IILnet/minecraft/world/chunk/ChunkStatus;Z)Lnet/minecraft/world/chunk/IChunk;"
             },
             'transformer': function(methodNode) {
-            	print("[JMTSUPERTRANS] SCPDriveDebug Transformer Called");
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -24,6 +23,8 @@ function initializeCoreMod() {
             	var LdcInsnNode = Java.type("org.objectweb.asm.tree.LdcInsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
             	var MethodType = asmapi.MethodType;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] SCPDriveDebug Transformer Called");
 
             	var targetMethodOwner = "net/minecraft/world/server/ServerChunkProvider$ChunkExecutor";
             	var targetMethodName = asmapi.mapMethod("func_213161_c"); 
@@ -37,10 +38,10 @@ function initializeCoreMod() {
         				targetMethodOwner, targetMethodName, targetMethodDesc, 0);
         		
         		if (callTarget != null) {
-        			print("[JMTSUPERTRANS] FOUND TARGET INSNS");
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] FOUND TARGET INSNS");
         		} else {
-        			print("[JMTSUPERTRANS] MISSING TARGET INSNS:");
-        			print("[JMTSUPERTRANS] HAVE CALL:" + (callTarget != null));
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] MISSING TARGET INSNS:");
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] HAVE CALL:" + (callTarget != null));
         			return;
         		}
         		
@@ -58,6 +59,8 @@ function initializeCoreMod() {
         		
         		instructions.insertBefore(callTarget, il);
         		instructions.insert(callTarget, skipTarget);
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] SCPDriveDebug Transformer Complete");
           
                 return methodNode;
             }
@@ -70,7 +73,6 @@ function initializeCoreMod() {
         		"methodDesc": "(Lnet/minecraft/world/chunk/listener/IChunkStatusListener;)V"
             },
             'transformer': function(methodNode) {
-            	print("[JMTSUPERTRANS] InitialChunkCountBypass Transformer Called");
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -81,6 +83,8 @@ function initializeCoreMod() {
             	var LdcInsnNode = Java.type("org.objectweb.asm.tree.LdcInsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
             	var MethodType = asmapi.MethodType;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] InitialChunkCountBypass Transformer Called");
 
             	//mv.visitMethodInsn(INVOKEVIRTUAL, "net/minecraft/world/server/ServerChunkProvider", "getLoadedChunksCount", "()I", false);
             	var targetMethodOwner = "net/minecraft/world/server/ServerChunkProvider";
@@ -95,10 +99,10 @@ function initializeCoreMod() {
         				targetMethodOwner, targetMethodName, targetMethodDesc, 0);
         		
         		if (callTarget != null) {
-        			print("[JMTSUPERTRANS] FOUND TARGET INSNS");
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] FOUND TARGET INSNS");
         		} else {
-        			print("[JMTSUPERTRANS] MISSING TARGET INSNS:");
-        			print("[JMTSUPERTRANS] HAVE CALL:" + (callTarget != null));
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] MISSING TARGET INSNS:");
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] HAVE CALL:" + (callTarget != null));
         			return;
         		}
         		
@@ -116,6 +120,8 @@ function initializeCoreMod() {
         		il.add(new JumpInsnNode(opcodes.IFNE, labelTgt));
         		
         		instructions.insert(ultraTgt, il);
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] InitialChunkCountBypass Transformer Complete");
           
                 return methodNode;
             }

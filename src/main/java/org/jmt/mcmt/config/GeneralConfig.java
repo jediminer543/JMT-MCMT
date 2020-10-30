@@ -35,13 +35,23 @@ import net.minecraftforge.fml.config.ModConfig;
 @EventBusSubscriber(modid = Constants.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class GeneralConfig {
 
+	// Actual config stuff
+	//////////////////////
+	
+	// General
 	public static boolean disabled;
+	
+	// Parallelism
 	public static int paraMax;
+	public static ParaMaxMode paraMaxMode;
 
+	// World
 	public static boolean disableWorld;
 
+	// Entity
 	public static boolean disableEntity;
 
+	// TE
 	public static boolean disableTileEntity;
 	public static boolean chunkLockModded;
 	public static Set<Class<?>> teWhiteList;
@@ -53,21 +63,58 @@ public class GeneralConfig {
 	public static List<String> teUnfoundWhiteList;
 	public static List<String> teUnfoundBlackList;
 
+	// Misc
 	public static boolean disableEnvironment;
-
 	public static boolean disableChunkProvider;
+	
+	//Debug
 	public static boolean enableChunkTimeout;
 	public static boolean enableTimeoutRegen;
 	public static int timeoutCount;
-
+	
+	// More Debug
+	public static boolean opsTracing;
+	
+	//Forge stuff
 	public static final GeneralConfigTemplate GENERAL;
 	public static final ForgeConfigSpec GENERAL_SPEC;
+	
+	public static enum ParaMaxMode {
+		Standard, 
+		Override,
+		Reduction
+	}
 
 	static {
 		final Pair<GeneralConfigTemplate, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(GeneralConfigTemplate::new);
 		GENERAL_SPEC = specPair.getRight();
 		GENERAL = specPair.getLeft();
 	}
+	
+	// Functions intended for usage
+	///////////////////////////////
+	
+	public static int getParallelism() {
+		switch (GeneralConfig.paraMaxMode) {
+		case Standard:
+			return GeneralConfig.paraMax <= 1 ? 
+					Runtime.getRuntime().availableProcessors() : 
+					Math.max(2, Math.min(Runtime.getRuntime().availableProcessors(), GeneralConfig.paraMax));
+		case Override:
+			return GeneralConfig.paraMax <= 1 ? 
+					Runtime.getRuntime().availableProcessors() : 
+					Math.max(2, GeneralConfig.paraMax);
+		case Reduction:
+			return Math.max(
+					Runtime.getRuntime().availableProcessors() - Math.max(0, GeneralConfig.paraMax),
+					2);
+		}
+		// Unsure quite how this is "Reachable code" but ok I guess
+		return Runtime.getRuntime().availableProcessors();
+	}
+	
+	// Config management stuff
+	//////////////////////////
 
 	@SubscribeEvent
 	public static void onModConfigEvent(final ModConfig.ModConfigEvent configEvent) {
@@ -81,7 +128,9 @@ public class GeneralConfig {
 	 */
 	public static void bakeConfig() {
 		disabled = GENERAL.disabled.get();
+		
 		paraMax = GENERAL.paraMax.get();
+		paraMaxMode = GENERAL.paraMaxMode.get();
 		
 		disableWorld = GENERAL.disableWorld.get();
 		disableEntity = GENERAL.disableEntity.get();
@@ -93,6 +142,8 @@ public class GeneralConfig {
 		enableChunkTimeout = GENERAL.enableChunkTimeout.get();
 		enableTimeoutRegen = GENERAL.enableTimeoutRegen.get();
 		timeoutCount = GENERAL.timeoutCount.get();
+		
+		opsTracing = GENERAL.opsTracing.get();
 		
 		teWhiteList = ConcurrentHashMap.newKeySet();//new HashSet<Class<?>>();
 		teUnfoundWhiteList = new ArrayList<String>();
@@ -121,7 +172,9 @@ public class GeneralConfig {
 	
 	public static void saveConfig() {
 		GENERAL.disabled.set(disabled);
+		
 		GENERAL.paraMax.set(paraMax);
+		GENERAL.paraMaxMode.set(paraMaxMode);
 		
 		GENERAL.disableWorld.set(disableWorld);
 		GENERAL.disableEntity.set(disableEntity);
@@ -133,6 +186,8 @@ public class GeneralConfig {
 		GENERAL.enableChunkTimeout.set(enableChunkTimeout);
 		GENERAL.enableTimeoutRegen.set(enableTimeoutRegen);
 		GENERAL.timeoutCount.set(timeoutCount);
+		
+		GENERAL.opsTracing.set(opsTracing);
 		
 		GENERAL.teWhiteList.get().clear();
 		GENERAL.teWhiteList.get().addAll(teUnfoundWhiteList);
@@ -148,7 +203,9 @@ public class GeneralConfig {
 	public static class GeneralConfigTemplate {
 
 		public final BooleanValue disabled;
+		
 		public final IntValue paraMax;
+		public final ConfigValue<ParaMaxMode> paraMaxMode;
 		
 		public final BooleanValue disableWorld;
 		
@@ -166,15 +223,28 @@ public class GeneralConfig {
 		public final BooleanValue enableTimeoutRegen;
 		public final IntValue timeoutCount;
 		
+		public final BooleanValue opsTracing;
+		
 		public GeneralConfigTemplate(ForgeConfigSpec.Builder builder) {
+			builder.push("general");
 			disabled = builder
 					.comment("Globally disable all toggleable functionality")
 					.define("disabled", false);
+			builder.push("parallelism");
 			paraMax = builder
-					.comment("Maximum amount of threads; will never create more threads\n"
+					.comment("Thread count config; In standard mode: will never create more threads\n"
 							+ "than there are CPU threads (as that causeses Context switch churning)\n"
 							+ "Values <=1 are treated as 'all cores'")
-					.defineInRange("timeoutCount", -1, -1, Integer.MAX_VALUE);
+					.defineInRange("paraMax", -1, -1, Integer.MAX_VALUE);
+			paraMaxMode = builder
+					.comment("Other modes for paraMax\n"
+							+"Override: Standard but without the CoreCount Ceiling (So you can have 64k threads if you want)\n"
+							+"Reduction: Parallelism becomes Math.max(CoreCount-paramax, 2), if paramax is set to be -1, it's treated as 0\n"
+							+"Todo: add more"
+							)
+					.defineEnum("paraMaxMode", ParaMaxMode.Standard);
+			builder.pop();
+			builder.pop();
 			builder.push("world");
 			disableWorld = builder
 					.comment("Disable world parallelisation")
@@ -203,16 +273,20 @@ public class GeneralConfig {
 							+ "This will occur even when chunkLockModded is set to false")
 					.define("teBlackList", (List<String>)new ArrayList<String>());
 			builder.pop();
-			builder.push("environment");
+			builder.push("misc");
 			disableEnvironment = builder
 					.comment("Disable environment (plant ticks, etc.) parallelisation")
 					.define("disableEnvironment", false);
-			builder.pop();
-			builder.push("misc");
 			disableChunkProvider = builder
 					.comment("Disable parallelised chunk caching; doing this will result in much lower performance with little to no gain")
 					.define("disableChunkProvider", false);
+			builder.pop();
+			builder.push("debug");
+			builder.comment("Here is where all the wierd diagnostic and hack options go to live");
 			builder.push("load-forcing");
+			builder.comment("This option allows for overuling chunk loading faliures. \n"
+					+ "This was needed due to an early bug in chunk loading parallelism, but remains for posterity\n"
+					+ "May break unexpectedly.");
 			enableChunkTimeout = builder
 					.comment("Enable chunk loading timeouts; this will forcably kill any chunks that fail to load in sufficient time\n"
 							+"may allow for loading of damaged/corrupted worlds")
@@ -224,6 +298,12 @@ public class GeneralConfig {
 					.comment("Ammount of workless iterations to wait before declaring a chunk load attempt as timed out\n"
 							+"This is in ~100us itterations (plus minus yield time) so timeout >= timeoutCount*100us")
 					.defineInRange("timeoutCount", 5000, 500, 500000);
+			builder.pop();
+			builder.push("ops-tracing");
+			builder.comment("This allows for tracing the operations invoked, to diagnose lockups/etc.");
+			opsTracing = builder
+					.comment("Enable ops tracing; this will probably have a performance impact, but allows for better debugging")
+					.define("opsTracing", false);
 		}
 
 	}

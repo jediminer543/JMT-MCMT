@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.commands.StatsCommand;
+import org.jmt.mcmt.asmdest.ASMHookTerminator;
 import org.jmt.mcmt.commands.ConfigCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 
@@ -69,10 +70,13 @@ public class MCMT
     @SubscribeEvent
     public void onServerStarting(FMLServerStartingEvent event) {
         // do something when the server starts
-        LOGGER.info("HELLO from server starting");
+        LOGGER.info("MCMT Initialising Server...");
         CommandDispatcher<CommandSource> commandDispatcher = event.getServer().getCommandManager().getDispatcher();
         ConfigCommand.register(commandDispatcher);
         StatsCommand.resetAll();
+        LOGGER.info("MCMT Setting up threadpool...");
+        ASMHookTerminator.setupThreadpool(GeneralConfig.getParallelism());
+        
     }
 
     @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
