@@ -15,7 +15,7 @@ jobs:
   - name: "MC 1.15.2"
     env: VERSION=1152
 script:
-  - BUILDSCRIPT="${VERSION}build"
+  - BUILDSCRIPT="./etc/buildscripts/${VERSION}build"
   - $BUILDSCRIPT 
 after_success:
   - ./etc/buildscripts/upload
