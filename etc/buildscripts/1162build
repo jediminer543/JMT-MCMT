@@ -1,0 +1,8 @@
+#!/bin/bash
+# Setup files
+###
+# Already Setup
+###
+# Build
+##
+./gradlew -Pmc_ver="1.16.2" -Pfg_ver="33.0.5" assemble

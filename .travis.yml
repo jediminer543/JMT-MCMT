@@ -1,0 +1,21 @@
+anguage: java
+jdk:
+  - openjdk8
+env:
+  global:
+    - secure: OKOv/uLEzTcddK2qHSFrbQvQrvTsHNBZhxI1pcno+3AJBS8WXW0ZjyeVBn2sOD/Q1Tdd3ZQk3bTemf8oxoWYhXhqpVEsKoU62h6bUcDU2kSjX8aYuiHIHZ7QieS9GkKQ73+HF4sxSxRkSpGPyBDzdrQaZmlfPc0bOxzluqZNQlWK4KUljNKbI7PObY7WYh0rJw9CxgwEF8TSQ3pbqRx3URdGMr5MHqplTUvJk8BhXTE1uJGvDwSo2r8IOEurNQUFUwIT+2uIIvfuRjz2T1ubD00xgZGtFcAwVeMMG1HH3dtTIExVGM7QhDw+PWo2zaGmI+iPoLux7m3warDvxbun1m7/dPU0DwpVlwfvqPiTw9P/d7m16Ye+CiNqWOSiA781RzhLcKmeM20wwMgj4ZPcRBh6gOxBlodq3Cdnd02msV4wJQSqjy0QMLo7Lb+eLsnRSLPsZ8lI8Bu2vwzDdjBAwuL71G/sDPUJKAElKXzp4WTMt3L7QjOYoSeKtCzTvaTnEHsFnyTh5QMPN+OwsDOylm95HPrby4yCTfqIWYcOVqKNW3bjWTo7VJl3s6o7daXyYdukdjwEAadns3NpEqjcOkEnVw3PE4KUCwP/tUDheQoLWYiOgkvXOlg3QqfK3BB8a/Bm3uhPrzK6sJ+q282GfR1mYM8o0ja/1KbHNMy7W/4=
+jobs:
+  include:
+  - name: "MC 1.16.3"
+    env: VERSION=1163
+  - name: "MC 1.16.2"
+    env: VERSION=1162
+  - name: "MC 1.16.1"
+    env: VERSION=1161
+  - name: "MC 1.15.2"
+    env: VERSION=1152
+script:
+  - BUILDSCRIPT="${VERSION}build"
+  - $BUILDSCRIPT 
+after_success:
+  - ./etc/buildscripts/upload

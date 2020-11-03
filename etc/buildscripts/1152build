@@ -1,0 +1,9 @@
+#!/bin/bash
+# Setup files
+###
+find ./src/ -exec sed -i "s@/\* 1\.16\.1 code; AKA the only thing that changed  \*/@/\* 1\.16\.1 code; AKA the only thing that changed  @" {} +
+find ./src/ -exec sed -i "s@/\* 1\.15\.2 code; AKA the only thing that changed  @/\* 1\.15\.2 code; AKA the only thing that changed  \*/@" {} + 
+###
+# Build
+##
+./gradlew -Pmc_ver="1.15.2" -Pfg_ver="31.2.31" assemble
