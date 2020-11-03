@@ -1,6 +1,6 @@
 #!/bin/bash
 for filename in build/libs/*.jar; do 
 	if [[ ${filename} != *"-modcore.jar"* ]]; then
-		curl -i -H 'Expect: application/json' -F file=@"$filename" -F "payload_json={ \"wait\": true, \"content\": \"Build artefact from $TRAVIS_JOB_NAME\nFor logs see $TRAVIS_JOB_WEB_URL\", "username": "Travis CI" } $WEBHOOK_URL
+		curl -i -H 'Expect: application/json' -F file=@"$filename" -F "payload_json={ \"wait\": true, \"content\": \"Build artefact from $TRAVIS_JOB_NAME\nFor logs see $TRAVIS_JOB_WEB_URL\", \"username\": \"Travis CI\" }" $WEBHOOK_URL
 	fi
 done
