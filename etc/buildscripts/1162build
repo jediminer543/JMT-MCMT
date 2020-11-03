@@ -5,4 +5,4 @@
 ###
 # Build
 ##
-./gradlew -Pmc_ver="1.16.2" -Pfg_ver="33.0.5" assemble
+./gradlew -Pmc_ver="1.16.2" -Pfg_ver="33.0.5" build
