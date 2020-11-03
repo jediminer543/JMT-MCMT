@@ -1,4 +1,6 @@
-anguage: java
+language: java
+os: linux
+dist: xenial
 jdk:
   - openjdk8
 env:
