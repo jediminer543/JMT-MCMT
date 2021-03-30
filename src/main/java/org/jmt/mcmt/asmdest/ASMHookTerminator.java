@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.paralelised.ChunkLock;
+import org.jmt.mcmt.paralelised.RunnableManagedBlocker;
 
 import net.minecraft.block.BlockEventData;
 import net.minecraft.entity.Entity;
@@ -131,6 +132,7 @@ public class ASMHookTerminator {
 			LOGGER.warn("Multiple servers?");
 			GeneralConfig.disabled = true;
 			serverworld.tick(hasTimeLeft);
+			net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 			return;
 		} else {
 			String taskName = "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
@@ -140,7 +142,22 @@ public class ASMHookTerminator {
 				try {
 					currentWorlds.incrementAndGet();
 					serverworld.tick(hasTimeLeft);
-					net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+					if (GeneralConfig.disableWorldPostTick) {
+						p.register();
+						ex.execute(() -> {
+							try {
+								ForkJoinPool.managedBlock(
+										new RunnableManagedBlocker(
+												() ->	net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld)));
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							} finally {
+								p.arriveAndDeregister();
+							}
+						});
+					} else {
+						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+					}
 				} finally {
 					p.arriveAndDeregister();
 					currentWorlds.decrementAndGet();
@@ -221,14 +238,16 @@ public class ASMHookTerminator {
 			try {
 				final boolean doLock = filterTE(tte);
 				if (doLock) {
-					BlockPos bp = ((TileEntity) tte).getPos();
-					long[] locks = ChunkLock.lock(bp, 1);
-					try {
-						currentTEs.incrementAndGet();
-						tte.tick();
-					} finally {
-						ChunkLock.unlock(locks);
-					}
+					ForkJoinPool.managedBlock(new RunnableManagedBlocker(() -> {
+						BlockPos bp = ((TileEntity) tte).getPos();
+						long[] locks = ChunkLock.lock(bp, 1);
+						try {
+							currentTEs.incrementAndGet();
+							tte.tick();
+						} finally {
+							ChunkLock.unlock(locks);
+						}
+					}));
 				} else {
 					currentTEs.incrementAndGet();
 					tte.tick();

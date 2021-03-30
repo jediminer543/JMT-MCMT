@@ -19,6 +19,10 @@ public class ChunkLock {
 		//TODO Add cleanup thread
 	}
 	
+	public static void cleanup() {
+		chunkLockCache = new ConcurrentHashMap<>();
+	}
+	
 	public static long[] lock(BlockPos bp, int radius) {
 		long cp = new ChunkPos(bp).asLong();
 		long[] targets = new long[(1+radius*2)*(1+radius*2)];

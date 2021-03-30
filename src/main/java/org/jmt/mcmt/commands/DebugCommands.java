@@ -1,19 +1,25 @@
 package org.jmt.mcmt.commands;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleRBTreeMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.ILocationArgument;
 import net.minecraft.command.arguments.Vec3Argument;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.server.ServerWorld;
 
@@ -31,7 +37,29 @@ public class DebugCommands {
 					cmdCtx.getSource().sendFeedback(message, true);
 					System.out.println(message.toString());
 					return 1;
-				}))).then(Commands.literal("tick").then(Commands.literal("te"))
+				}))).then(Commands.literal("nbtdump")
+						.then(Commands.argument("location", Vec3Argument.vec3()).executes(cmdCtx -> {
+							ILocationArgument loc = Vec3Argument.getLocation(cmdCtx, "location");
+							BlockPos bp = loc.getBlockPos(cmdCtx.getSource());
+							ServerWorld sw = cmdCtx.getSource().getWorld();
+							BlockState bs = sw.getBlockState(bp);
+							TileEntity te = sw.getTileEntity(bp);
+							if (te == null) {
+								StringTextComponent message = new StringTextComponent(
+										"Block at " + bp + " is " + bs.getBlock().getRegistryName() + " has no NBT");
+								cmdCtx.getSource().sendFeedback(message, true);
+							}
+							CompoundNBT nbt = te.serializeNBT();
+							ITextComponent itc = nbt.toFormattedComponent();
+							StringTextComponent message = new StringTextComponent(
+									"Block at " + bp + " is " + bs.getBlock().getRegistryName() + " with TE NBT:");
+							cmdCtx.getSource().sendFeedback(message, true);
+							cmdCtx.getSource().sendFeedback(itc, true);
+							//System.out.println(message.toString());
+							return 1;
+				}))).then(Commands.literal("tick").requires(cmdSrc -> {
+					return cmdSrc.hasPermissionLevel(2);
+				}).then(Commands.literal("te"))
 						.then(Commands.argument("location", Vec3Argument.vec3()).executes(cmdCtx -> {
 							ILocationArgument loc = Vec3Argument.getLocation(cmdCtx, "location");
 							BlockPos bp = loc.getBlockPos(cmdCtx.getSource());
@@ -48,15 +76,34 @@ public class DebugCommands {
 							}
 							return 1;
 						})))
-				.then(Commands.literal("jarjar").executes(cmdCtx -> {
-					boolean jjs = true;
-					for (Method m : Object2DoubleRBTreeMap.class.getMethods()) {
-						if ((m.getModifiers() & Modifier.STATIC) == 0 && (m.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC) {
-							jjs &= ((m.getModifiers() & Modifier.SYNCHRONIZED) == Modifier.SYNCHRONIZED);
-						}
+				.then(Commands.literal("classpathDump").requires(cmdSrc -> {
+					return cmdSrc.hasPermissionLevel(2);
+				}).executes(cmdCtx -> {
+					Path base = Paths.get("classpath_dump/");
+					try {
+						Files.createDirectories(base);
+					} catch (IOException e1) {
+						e1.printStackTrace();
 					}
-					StringTextComponent message = new StringTextComponent(
-							"Jar Jar Syncs " + (jjs ? "has" : "hasn't") + " forced FastUtil to be synchronised");
+					// Copypasta from syncfu;
+					Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator)).flatMap(path -> {
+			        	File file = new File(path);
+			        	if (file.isDirectory()) {
+			        		return Arrays.stream(file.list((d, n) -> n.endsWith(".jar")));
+			        	}
+			        	return Arrays.stream(new String[] {path});
+			        }).filter(s -> s.endsWith(".jar"))
+					.map(Paths::get).forEach(path -> {
+			        	Path name = path.getFileName();
+			        	try {
+							Files.copy(path, Paths.get(base.toString(), name.toString()), StandardCopyOption.REPLACE_EXISTING);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					});
+					
+					
+					StringTextComponent message = new StringTextComponent("Classpath Dumped to: " + base.toAbsolutePath().toString());
 					cmdCtx.getSource().sendFeedback(message, true);
 					System.out.println(message.toString());
 					return 1;

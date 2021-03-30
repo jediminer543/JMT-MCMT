@@ -8,6 +8,7 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.spi.FileSystemProvider;
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -209,7 +210,7 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 	        for (Iterator<Path> it = walk.iterator(); it.hasNext();){
 	        	Path file = it.next();
 	        	LOGGER.info(M_LOCATOR, "Found target jar: {}", file);
-	        	Files.copy(file, root.resolve(file.getFileName().toString()));
+	        	Files.copy(file, root.resolve(file.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
 	        }
 		}
 		catch (Exception e) {

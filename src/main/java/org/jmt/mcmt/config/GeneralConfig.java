@@ -47,6 +47,7 @@ public class GeneralConfig {
 
 	// World
 	public static boolean disableWorld;
+	public static boolean disableWorldPostTick;
 
 	// Entity
 	public static boolean disableEntity;
@@ -133,6 +134,8 @@ public class GeneralConfig {
 		paraMaxMode = GENERAL.paraMaxMode.get();
 		
 		disableWorld = GENERAL.disableWorld.get();
+		disableWorldPostTick = GENERAL.disableWorldPostTick.get();
+		
 		disableEntity = GENERAL.disableEntity.get();
 		disableTileEntity = GENERAL.disableTileEntity.get();
 		disableEnvironment = GENERAL.disableEnvironment.get();
@@ -177,6 +180,8 @@ public class GeneralConfig {
 		GENERAL.paraMaxMode.set(paraMaxMode);
 		
 		GENERAL.disableWorld.set(disableWorld);
+		GENERAL.disableWorldPostTick.set(disableWorldPostTick);
+		
 		GENERAL.disableEntity.set(disableEntity);
 		GENERAL.disableTileEntity.set(disableTileEntity);
 		GENERAL.disableEnvironment.set(disableEnvironment);
@@ -208,6 +213,7 @@ public class GeneralConfig {
 		public final ConfigValue<ParaMaxMode> paraMaxMode;
 		
 		public final BooleanValue disableWorld;
+		public final BooleanValue disableWorldPostTick;
 		
 		public final BooleanValue disableEntity;
 		
@@ -249,6 +255,9 @@ public class GeneralConfig {
 			disableWorld = builder
 					.comment("Disable world parallelisation")
 					.define("disableWorld", false);
+			disableWorldPostTick = builder
+					.comment("Disable world post tick parallelisation")
+					.define("disableWorldPostTick", false);
 			builder.pop();
 			builder.push("entity");
 			disableEntity = builder

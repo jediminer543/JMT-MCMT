@@ -12,6 +12,8 @@ import javax.annotation.Nullable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.jmt.mcmt.asmdest.ASMHookTerminator;
 import org.jmt.mcmt.config.GeneralConfig;
 
@@ -42,6 +44,8 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	protected int access = Integer.MIN_VALUE;
 	protected static final int CACHE_SIZE = 64;
 	protected Thread cacheThread;
+	Logger log = LogManager.getLogger();
+	Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
 
 	/* 1.16.1 code; AKA the only thing that changed  */
 	public ParaServerChunkProvider(ServerWorld worldIn, LevelSave worldDirectory, DataFixer dataFixer,
@@ -83,6 +87,8 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 			return c;
 		}
 		
+		//log.debug("Missed chunk " + i + " on status "  + requiredStatus.toString());
+		
 		if (ASMHookTerminator.isThreadPooled("Main", Thread.currentThread())) {
 			return CompletableFuture.supplyAsync(() -> {
 	            return this.getChunk(chunkX, chunkZ, requiredStatus, load);
@@ -110,6 +116,8 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		if (c != null) {
 			return (Chunk) c;
 		}
+		
+		//log.debug("Missed chunk " + i + " now");
 
 		Chunk cl = super.getChunkNow(chunkX, chunkZ);
 		cacheChunk(i, cl, ChunkStatus.FULL);
@@ -147,11 +155,9 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		chunkCache.put(new ChunkCacheAddress(chunkPos, status), ccl);
 	}
 
-	Logger log = LogManager.getLogger();
-
 	public void chunkCacheCleanup() {
 		while (world == null || world.getServer() == null) {
-			log.debug("ChunkCleaner Waiting for startup");
+			log.debug(chunkCleaner, "ChunkCleaner Waiting for startup");
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
@@ -178,7 +184,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 				}
 			}
 		}
-		log.debug("ChunkCleaner terminating");
+		log.debug(chunkCleaner, "ChunkCleaner terminating");
 	}
 	
 	protected class ChunkCacheAddress {
