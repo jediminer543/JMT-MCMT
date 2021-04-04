@@ -25,7 +25,7 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
-          ${{ runner.os }}-1152-gradle-
+          ${{ runner.os }}-gradle-
     - name: Grant execute permission buildscripts
       run: |
         chmod +x ./etc/buildscripts/1152build |
