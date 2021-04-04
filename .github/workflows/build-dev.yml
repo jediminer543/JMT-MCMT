@@ -41,6 +41,8 @@ jobs:
     - name: Cleanup
       run: git reset --hard HEAD
     - name: Publish to Discord
+      env: # Setup Webhook Thing
+        DEVEL_WEBHOOK_URL: ${{ secrets.DEVEL_WEBHOOK_URL }}
       run: ./etc/buildscripts/upload
     
 
