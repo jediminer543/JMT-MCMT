@@ -6,4 +6,4 @@ find ./src/ -type f -exec sed -i "s@/\* 1\.15\.2 code; AKA the only thing that c
 ###
 # Build
 ##
-./gradlew -Pmc_ver="1.15.2" -Pfg_ver="31.2.31" build
+./gradlew -Pmc_ver="1.15.2" -Pfg_ver="31.2.31" -Pmappings_ver="20200603-1.15.1" build
