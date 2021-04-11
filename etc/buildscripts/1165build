@@ -1,0 +1,8 @@
+#!/bin/bash
+# Setup files
+###
+# Already done as is default
+###
+# Build
+##
+./gradlew -Pmc_ver="1.16.5" -Pfg_ver="36.1.2" build

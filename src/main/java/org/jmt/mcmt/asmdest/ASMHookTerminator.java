@@ -147,8 +147,11 @@ public class ASMHookTerminator {
 						ex.execute(() -> {
 							try {
 								ForkJoinPool.managedBlock(
-										new RunnableManagedBlocker(
-												() ->	net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld)));
+										new RunnableManagedBlocker(() ->  { 
+												synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
+													net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+												}
+										}));
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							} finally {

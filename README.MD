@@ -1,3 +1,7 @@
+[![Join our discord](https://img.shields.io/discord/749993549004800081?style=for-the-badge)](https://discord.gg/ZuYgPFURkf)
+[![Issues](https://img.shields.io/github/issues/jediminer543/JMT-MCMT?style=for-the-badge)](https://github.com/jediminer543/JMT-MCMT/issues)
+[![Build Statis](https://img.shields.io/github/workflow/status/jediminer543/JMT-MCMT/Java%20CI%20with%20Gradle?style=for-the-badge)](https://github.com/jediminer543/JMT-MCMT/actions/workflows/build-dev.yml)
+
 # MCMT - Minecraft Multi-Threading Mod
 
 This is a mod for Minecraft (forge) versions 1.15.2 and 1.16.1 that enables multithreading
@@ -22,6 +26,15 @@ TO MODDERS: This mod logs at warn level to the log saying it is installed every 
 Simply install the jar like you normally would any other mod; it's that simple. 
 
 There are different jars for 1.15.2 and 1.16.1 as while exactly 1 method thing changed to break transferability, there is no way for me to deal with it in a single jar. So make sure you get the right one.
+
+## Getting involved
+
+If you want to get involved with the project there are several things you can do:
+
+- There is a currently seperate version of this mod that is [working on fabric support](https://github.com/himekifee/MCMTFabric)
+- We have a discord (link at top of github readme) that is where I'm going to try and organsie stuff
+- Create an issue with as much detail as possible (or comment on ones that are already there with more info)
+- Contribute code
 
 ## How it works
 
@@ -70,8 +83,6 @@ The resulting jar will be present in `./build/libs/`
 
 ## TODO LIST
 
-- Add config/api for specifying classes/packages that can/cant multithread
-- ~~Make ServerWorld.entitiesById not FastUtil Based (can cause issue with WorldEntitySpawner.func_234964_a_ via SCP.func_217220_m)~~ Done (I think)
 - Parallelise more stuff
 - Hack the planet
 - Document everything so it's reproducable

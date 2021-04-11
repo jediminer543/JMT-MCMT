@@ -29,15 +29,15 @@ jobs:
     - name: Grant execute permission buildscripts
       run: |
         chmod +x ./etc/buildscripts/1152build |
-        chmod +x ./etc/buildscripts/1163build |
+        chmod +x ./etc/buildscripts/1165build |
         chmod +x ./etc/buildscripts/upload |
         chmod +x ./gradlew
     - name: Build 1.15.2
       run: ./etc/buildscripts/1152build
     - name: Cleanup
       run: git reset --hard HEAD
-    - name: Build 1.16.3
-      run: ./etc/buildscripts/1163build
+    - name: Build 1.16.5
+      run: ./etc/buildscripts/1165build
     - name: Cleanup
       run: git reset --hard HEAD
     - name: Publish to Discord
