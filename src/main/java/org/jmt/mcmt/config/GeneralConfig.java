@@ -75,6 +75,7 @@ public class GeneralConfig {
 	
 	// More Debug
 	public static boolean opsTracing;
+	public static int logcap;
 	
 	//Forge stuff
 	public static final GeneralConfigTemplate GENERAL;
@@ -147,6 +148,7 @@ public class GeneralConfig {
 		timeoutCount = GENERAL.timeoutCount.get();
 		
 		opsTracing = GENERAL.opsTracing.get();
+		logcap = GENERAL.logcap.get();
 		
 		teWhiteList = ConcurrentHashMap.newKeySet();//new HashSet<Class<?>>();
 		teUnfoundWhiteList = new ArrayList<String>();
@@ -193,6 +195,7 @@ public class GeneralConfig {
 		GENERAL.timeoutCount.set(timeoutCount);
 		
 		GENERAL.opsTracing.set(opsTracing);
+		GENERAL.logcap.set(logcap);
 		
 		GENERAL.teWhiteList.get().clear();
 		GENERAL.teWhiteList.get().addAll(teUnfoundWhiteList);
@@ -230,6 +233,7 @@ public class GeneralConfig {
 		public final IntValue timeoutCount;
 		
 		public final BooleanValue opsTracing;
+		public final IntValue logcap;
 		
 		public GeneralConfigTemplate(ForgeConfigSpec.Builder builder) {
 			builder.push("general");
@@ -313,6 +317,12 @@ public class GeneralConfig {
 			opsTracing = builder
 					.comment("Enable ops tracing; this will probably have a performance impact, but allows for better debugging")
 					.define("opsTracing", false);
+			builder.pop();
+			builder.push("logcap");
+			builder.comment("This allows for tracing the operations invoked, to diagnose lockups/etc.");
+			logcap = builder
+					.comment("Maximum time between MCMT presence alerts in 10ms steps")
+					.defineInRange("opsTracing", 720000, 15000, Integer.MAX_VALUE);
 		}
 
 	}
