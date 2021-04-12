@@ -1,33 +1,42 @@
 {
   "homepage": "https://github.com/jediminer543/JMT-MCMT",
+  "1.16.5": {
+  	"0.20.74": "Hopefully improved performance, and worked on compatibility"
+  },
   "1.16.3": {
+  	"0.20.74": "Hopefully improved performance, and worked on compatibility",
   	"0.18.60": "Fixed loading so you only need one jar; and added thread capping to the config",
     "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "1.16.2": {
+  	"0.20.74": "Hopefully improved performance, and worked on compatibility",
   	"0.18.60": "Fixed loading so you only need one jar; and added thread capping to the config",
     "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "1.16.1": {
+  	"0.20.74": "Hopefully improved performance, and worked on compatibility",
   	"0.18.60": "Fixed loading so you only need one jar; and added thread capping to the config",
     "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "1.15.2": {
+  	"0.20.74": "Hopefully improved performance, and worked on compatibility",
   	"0.18.60": "Fixed loading so you only need one jar; and added thread capping to the config",
     "0.17.54": "Added update checking and made mod actually load again",
     "0.17.52": "Added FU patching"
   },
   "promos": {
-    "1.16.3-latest": "0.17.53",
-    "1.16.3-recommended": "0.17.53",
-    "1.16.2-latest": "0.17.53",
-    "1.16.2-recommended": "0.17.53",
-    "1.16.1-latest": "0.17.53",
-    "1.16.1-recommended": "0.17.53",
-    "1.15.2-latest": "0.17.53",
-    "1.15.2-recommended": "0.17.53"
+  	"1.16.5-latest": "0.20.74",
+    "1.16.5-recommended": "0.20.74",
+  	"1.16.3-latest": "0.20.74",
+    "1.16.3-recommended": "0.20.74",
+    "1.16.2-latest": "0.20.74",
+    "1.16.2-recommended": "0.20.74",
+    "1.16.1-latest": "0.20.74",
+    "1.16.1-recommended": "0.20.74",
+    "1.15.2-latest": "0.20.74",
+    "1.15.2-recommended": "0.20.74"
   }
 }
