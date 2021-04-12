@@ -78,3 +78,4 @@ forge*changelog.txt
 # TODO
 consolelog.log
 src/main/resources/META-INF/mods.toml
+logs/*
