@@ -19,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.paralelised.ChunkLock;
-import org.jmt.mcmt.paralelised.RunnableManagedBlocker;
 
 import net.minecraft.block.BlockEventData;
 import net.minecraft.entity.Entity;
@@ -73,7 +72,7 @@ public class ASMHookTerminator {
 		ex = new ForkJoinPool(
 				parallelism,
 				 fjpf,
-	             null, true);
+	             null, false);
 	}
 	
 	/**
@@ -146,14 +145,14 @@ public class ASMHookTerminator {
 						p.register();
 						ex.execute(() -> {
 							try {
-								ForkJoinPool.managedBlock(
-										new RunnableManagedBlocker(() ->  { 
+								//ForkJoinPool.managedBlock(
+								//		new RunnableManagedBlocker(() ->  { 
 												synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
 													net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 												}
-										}));
-							} catch (InterruptedException e) {
-								e.printStackTrace();
+								//		}));
+							//} catch (InterruptedException e) {
+							//	e.printStackTrace();
 							} finally {
 								p.arriveAndDeregister();
 							}
@@ -241,7 +240,7 @@ public class ASMHookTerminator {
 			try {
 				final boolean doLock = filterTE(tte);
 				if (doLock) {
-					ForkJoinPool.managedBlock(new RunnableManagedBlocker(() -> {
+					//ForkJoinPool.managedBlock(new RunnableManagedBlocker(() -> {
 						BlockPos bp = ((TileEntity) tte).getPos();
 						long[] locks = ChunkLock.lock(bp, 1);
 						try {
@@ -250,7 +249,7 @@ public class ASMHookTerminator {
 						} finally {
 							ChunkLock.unlock(locks);
 						}
-					}));
+					//}));
 				} else {
 					currentTEs.incrementAndGet();
 					tte.tick();
