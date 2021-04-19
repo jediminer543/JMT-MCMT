@@ -16,7 +16,9 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.entity.EntityType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -78,6 +80,16 @@ public class MCMT
         ASMHookTerminator.setupThreadpool(GeneralConfig.getParallelism());
         
     }
+    
+    /*// TestCodePleaseIgnore
+    @SubscribeEvent
+    public void onWorldPostTick(TickEvent.WorldTickEvent event) {
+        // do something when the server starts
+    	if (event.side == LogicalSide.SERVER && event.phase == TickEvent.Phase.END) {
+    		Thread.dumpStack();
+    	}
+    }
+    */
 
     @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
     public static class RegistryEvents {

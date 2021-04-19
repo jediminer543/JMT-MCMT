@@ -298,25 +298,27 @@ public class ASMHookTerminator {
 	public static String populateCrashReport() {
 		StringBuilder confInfo = new StringBuilder();
 		confInfo.append("\n");
-		confInfo.append("\t"); confInfo.append("Config Info:"); confInfo.append("\n");
-		confInfo.append("\t"); confInfo.append("\t- Disabled: "); 
+		confInfo.append("\t\t"); confInfo.append("Config Info:"); confInfo.append("\n");
+		confInfo.append("\t\t"); confInfo.append("\t- Disabled: "); 
 		confInfo.append(GeneralConfig.disabled); confInfo.append("\n");
-		confInfo.append("\t"); confInfo.append("\t- World Disabled: "); 
-		confInfo.append(GeneralConfig.disableWorld); confInfo.append("\n");
-		confInfo.append("\t"); confInfo.append("\t- Entity Disabled: "); 
+		confInfo.append("\t\t"); confInfo.append("\t- World Disabled: "); 
+		confInfo.append(GeneralConfig.disableWorld); 
+		confInfo.append("(onPostTick Disabled: "); confInfo.append(GeneralConfig.disableWorldPostTick); confInfo.append(")\n");
+		confInfo.append("\t\t"); confInfo.append("\t- Entity Disabled: "); 
 		confInfo.append(GeneralConfig.disableEntity); confInfo.append("\n");
-		confInfo.append("\t"); confInfo.append("\t- Env Disabled: "); 
+		confInfo.append("\t\t"); confInfo.append("\t- Env Disabled: "); 
 		confInfo.append(GeneralConfig.disableEnvironment); confInfo.append("\n");
-		confInfo.append("\t"); confInfo.append("\t- TE Disabled: "); 
+		confInfo.append("\t\t"); confInfo.append("\t- TE Disabled: "); 
 		confInfo.append(GeneralConfig.disableTileEntity); confInfo.append("\n");
-		confInfo.append("\t"); confInfo.append("\t- SCP Disabled: "); 
+		confInfo.append("\t\t"); confInfo.append("\t- SCP Disabled: "); 
 		confInfo.append(GeneralConfig.disableChunkProvider); confInfo.append("\n");
+		//TODO expand on TE settings
 		if (GeneralConfig.opsTracing) {
-			confInfo.append("\t"); confInfo.append("-- Running Operations Begin -- "); confInfo.append("\n");
+			confInfo.append("\t\t"); confInfo.append("-- Running Operations Begin -- "); confInfo.append("\n");
 			for (String s : currentTasks) {
-				confInfo.append("\t"); confInfo.append("\t"); confInfo.append(s); confInfo.append("\n");
+				confInfo.append("\t\t"); confInfo.append("\t"); confInfo.append(s); confInfo.append("\n");
 			}
-			confInfo.append("\t"); confInfo.append("-- Running Operations End -- "); confInfo.append("\n");
+			confInfo.append("\t\t"); confInfo.append("-- Running Operations End -- "); confInfo.append("\n");
 		}
 		return confInfo.toString();
 	}

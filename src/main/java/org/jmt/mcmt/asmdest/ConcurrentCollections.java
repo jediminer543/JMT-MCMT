@@ -20,6 +20,11 @@ public class ConcurrentCollections {
 		return Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
 	}
 	
+	public static <T, U> ConcurrentHashMap<T, U> newHashMap() {
+		LOGGER.info("Concurrent hash map created");
+		return new ConcurrentHashMap<T, U>();
+	}
+	
 	public static <T> List<T> newLinkedList() {
 		LOGGER.info("Concurrent \"linked\" list created");
 		return new CopyOnWriteArrayList<T>();

@@ -46,6 +46,53 @@ function initializeCoreMod() {
             	return methodNode;
             }
     	},
+    	'ClassInheritanceMultiMapMap': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.util.ClassInheritanceMultiMap',
+                "methodName": "<init>",
+        		"methodDesc": "(Ljava/lang/Class;)V"
+            },
+            "transformer": function(methodNode) {
+            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Called");
+            	
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+            	var TypeInsnNode = Java.type("org.objectweb.asm.tree.TypeInsnNode");
+            	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+            	var MethodType = asmapi.MethodType;
+            	
+            	var instructions = methodNode.instructions;
+            	
+            	//com/google/common/collect/Maps.newHashMap()Ljava/util/HashMap;
+            	var callMethod = "newHashMap";
+        		var callClass = "com/google/common/collect/Maps";
+        		var callDesc = "()Ljava/util/HashMap;";
+        		
+        		var callTarget = asmapi.findFirstMethodCallAfter(methodNode, MethodType.STATIC, 
+        				callClass, callMethod, callDesc, 0);
+        		            	
+            	var il = new InsnList();
+            	// Purge old arrayList
+            	il.add(new InsnNode(opcodes.POP));
+            	/*
+            	mv.visitTypeInsn(NEW, "java/util/concurrent/CopyOnWriteArrayList");
+				mv.visitInsn(DUP);
+				mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/CopyOnWriteArrayList", "<init>", "()V", false);
+            	 */
+            	il.add(new TypeInsnNode(opcodes.NEW, "java/util/concurrent/ConcurrentHashMap"));
+            	il.add(new InsnNode(opcodes.DUP));
+            	il.add(new MethodInsnNode(opcodes.INVOKESPECIAL, 
+            			"java/util/concurrent/ConcurrentHashMap", "<init>", "()V", false));
+            	instructions.insert(callTarget, il);
+            	
+            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Complete");
+            	
+            	return methodNode;
+            }
+    	},
     	"ServerTickListSelfRepair": {
     		'target': {
     			'type': 'METHOD',
