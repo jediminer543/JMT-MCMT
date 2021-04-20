@@ -16,6 +16,7 @@ import java.util.function.BooleanSupplier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jmt.mcmt.MCMT;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.paralelised.ChunkLock;
@@ -64,9 +65,11 @@ public class ASMHookTerminator {
 	
 	public static void setupThreadpool(int parallelism) {
 		threadID = new AtomicInteger();
+		final ClassLoader cl = MCMT.class.getClassLoader();
 		ForkJoinWorkerThreadFactory fjpf = p -> {
 			ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
 			fjwt.setName("MCMT-Pool-Thread-"+threadID.getAndIncrement());
+			fjwt.setContextClassLoader(cl);
 			return fjwt;
 		};
 		ex = new ForkJoinPool(
