@@ -15,7 +15,6 @@ import net.minecraft.block.Block;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.EntityType;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -27,6 +26,10 @@ import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+
+/* 1.16.1 code; AKA the only thing that changed  */
+import net.minecraftforge.event.RegisterCommandsEvent;
+/* */
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod("jmt_mcmt")
