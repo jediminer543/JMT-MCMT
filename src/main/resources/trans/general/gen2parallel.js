@@ -226,9 +226,26 @@ function initializeCoreMod() {
             	//methodNode.access += opcodes.ACC_SYNCHRONIZED;
             	
             	var target = asmapi.findFirstInstruction(methodNode, opcodes.GETFIELD);
-            	var target = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, instructions.indexOf(target)+1);
-            	if (target == null || target.descriptor != "Ljava/lang/Thread;") {
-            		asmapi.log("FATAL", "[JMTSUPERTRANS] you are running an unsupported version of craftbukkit, please don't");
+            	if (target != null) {
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] Debug: " + target.descriptor);
+        		} else {
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] Debug: NullOP");
+        		}
+            	while (target != null && target.desc != "Ljava/lang/Thread;") {
+            		target = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, instructions.indexOf(target)+1);
+            		if (target != null) {
+            			asmapi.log("DEBUG", "[JMTSUPERTRANS] Debug: " + target.descriptor);
+            		} else {
+            			asmapi.log("DEBUG", "[JMTSUPERTRANS] Debug: NullOP");
+            		}
+            	}
+            	if (target == null || target.desc != "Ljava/lang/Thread;") {
+            		asmapi.log("FATAL", "[JMTSUPERTRANS] You are running an unsupported version of craftbukkit, please don't");
+            		if (target != null) {
+            			asmapi.log("DEBUG", "[JMTSUPERTRANS] Debug: " + target.descriptor);
+            		} else {
+            			asmapi.log("DEBUG", "[JMTSUPERTRANS] Debug: NullOP");
+            		}
             		return methodNode;
             	}
             	
