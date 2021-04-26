@@ -15,6 +15,7 @@ import net.minecraft.block.Block;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.EntityType;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -79,6 +80,13 @@ public class MCMT
         LOGGER.info("MCMT Setting up threadpool...");
         ASMHookTerminator.setupThreadpool(GeneralConfig.getParallelism());
         
+    }
+    
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+    	LOGGER.info("MCMT Registering Commands");
+    	CommandDispatcher<CommandSource> commandDispatcher = event.getDispatcher();
+        ConfigCommand.register(commandDispatcher);
     }
     
     /*// TestCodePleaseIgnore
