@@ -174,12 +174,12 @@ function initializeCoreMod() {
         		"methodDesc": "(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/tileentity/TileEntity;"
             },
             "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] WorldGetTE Transformer Called");
-            	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
             	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] WorldGetTE Transformer Called");
             	
             	
             	var instructions = methodNode.instructions;
@@ -187,6 +187,11 @@ function initializeCoreMod() {
             	//methodNode.access += opcodes.ACC_SYNCHRONIZED;
             	
             	var target = asmapi.findFirstInstruction(methodNode, opcodes.GETFIELD);
+            	if (target == null) {
+            		asmapi.log("FATAL", "[JMTSUPERTRANS] WorldGetTE Transformer FAILED; this may be craftbukkit's doing");
+            		asmapi.log("FATAL", "If you are not running CB or equiv, please start panicing");
+            		return methodNode;
+            	}
             	var target = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, instructions.indexOf(target)+1);
             	
             	var il = new InsnList();
@@ -195,7 +200,45 @@ function initializeCoreMod() {
             	instructions.insert(target, il);
             	
             	
-            	print("[JMTSUPERTRANS] WorldGetTE Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] WorldGetTE Transformer Complete");
+            	
+            	return methodNode;
+            }
+    	},
+    	'WorldGetTECraftBukkit': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.World',
+                "methodName": "getTileEntity",
+        		"methodDesc": "(Lnet/minecraft/util/math/BlockPos;Z)Lnet/minecraft/tileentity/TileEntity;"
+            },
+            "transformer": function(methodNode) {
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] WorldGetTECraftBukkit Transformer Called");
+            	
+            	
+            	var instructions = methodNode.instructions;
+            	
+            	//methodNode.access += opcodes.ACC_SYNCHRONIZED;
+            	
+            	var target = asmapi.findFirstInstruction(methodNode, opcodes.GETFIELD);
+            	var target = asmapi.findFirstInstructionAfter(methodNode, opcodes.GETFIELD, instructions.indexOf(target)+1);
+            	if (target == null || target.descriptor != "Ljava/lang/Thread;") {
+            		asmapi.log("FATAL", "[JMTSUPERTRANS] you are running an unsupported version of craftbukkit, please don't");
+            		return methodNode;
+            	}
+            	
+            	var il = new InsnList();
+            	il.add(new InsnNode(opcodes.POP));
+            	il.add(new InsnNode(opcodes.DUP));
+            	instructions.insert(target, il);
+            	
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] WorldGetTECraftBukkit Transformer Complete");
             	
             	return methodNode;
             }
