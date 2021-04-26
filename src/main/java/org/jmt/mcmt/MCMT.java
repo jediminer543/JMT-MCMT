@@ -82,12 +82,14 @@ public class MCMT
         
     }
     
+    /* 1.16.1 code; AKA the only thing that changed  */
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
     	LOGGER.info("MCMT Registering Commands");
     	CommandDispatcher<CommandSource> commandDispatcher = event.getDispatcher();
         ConfigCommand.register(commandDispatcher);
     }
+    /* */
     
     /*// TestCodePleaseIgnore
     @SubscribeEvent
