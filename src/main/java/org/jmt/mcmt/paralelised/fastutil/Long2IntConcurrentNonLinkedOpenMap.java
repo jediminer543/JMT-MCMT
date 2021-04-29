@@ -1,5 +1,7 @@
 package org.jmt.mcmt.paralelised.fastutil;
 
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,6 +12,8 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntSortedMap;
 import it.unimi.dsi.fastutil.longs.LongComparator;
 import it.unimi.dsi.fastutil.longs.LongSortedSet;
+import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
+import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 
 public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMap {
 
@@ -336,10 +340,12 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 	public LongComparator comparator() {
 		return null;
 	}
-
+	
+	
 	@Override
 	public FastSortedEntrySet long2IntEntrySet() {
-		return entries;
+		//TODO implement
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

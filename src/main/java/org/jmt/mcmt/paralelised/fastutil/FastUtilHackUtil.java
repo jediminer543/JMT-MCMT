@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongBidirectionalIterator;
 import it.unimi.dsi.fastutil.longs.LongCollection;
@@ -1269,6 +1270,32 @@ public class FastUtilHackUtil {
 		public Integer getKey() {
 			return parent.getKey();
 		}
+		
+	}
+	
+	public static class Long2IntWrapperEntry implements Long2IntMap.Entry {
+
+		java.util.Map.Entry<Long, Integer> parent;
+		
+		public Long2IntWrapperEntry(java.util.Map.Entry<Long, Integer> parent) {
+			this.parent = parent;
+		}
+
+		@Override
+		public long getLongKey() {
+			return parent.getKey();
+		}
+
+		@Override
+		public int getIntValue() {
+			return parent.getValue();
+		}
+
+		@Override
+		public int setValue(int value) {
+			return parent.setValue(value);
+		}
+
 		
 	}
 	
