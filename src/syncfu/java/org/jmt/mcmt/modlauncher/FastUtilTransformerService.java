@@ -124,6 +124,8 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 		
 		List<ITransformer> out = new ArrayList<>();
 		out.add(this);
+		// TODO add development testing
+		//out.add(new DevModeEnabler());
 		return out;
 	}
 
