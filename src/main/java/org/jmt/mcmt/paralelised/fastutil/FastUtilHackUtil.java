@@ -19,10 +19,13 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.LongBidirectionalIterator;
 import it.unimi.dsi.fastutil.longs.LongCollection;
+import it.unimi.dsi.fastutil.longs.LongComparator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongListIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.longs.LongSortedSet;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
@@ -575,6 +578,159 @@ public class FastUtilHackUtil {
 		
 	}
 
+	public static LongSortedSet wrapLongSortedSet(Set<Long> longset) {
+		return new WrappingLongSortedSet(longset);
+	}
+	
+	public static class WrappingLongSortedSet implements LongSortedSet {
+
+		Set<Long> backing;
+		
+		public WrappingLongSortedSet(Set<Long> backing) {
+			this.backing = backing;
+		}
+		
+		@Override
+		public boolean add(long key) {
+			return backing.add(key);
+		}
+
+		@Override
+		public boolean contains(long key) {
+			return backing.contains(key);
+		}
+
+		@Override
+		public long[] toLongArray() {
+			return backing.stream().mapToLong(i -> i).toArray();
+		}
+
+		@Override
+		public long[] toLongArray(long[] a) {
+			if (a.length >= size()) {
+				return null;
+			} else {
+				return toLongArray();
+			}
+		}
+
+		@Override
+		public long[] toArray(long[] a) {
+			return toLongArray(a);
+		}
+
+		@Override
+		public boolean addAll(LongCollection c) {
+			return backing.addAll(c);
+		}
+
+		@Override
+		public boolean containsAll(LongCollection c) {
+			return backing.containsAll(c);
+		}
+
+		@Override
+		public boolean removeAll(LongCollection c) {
+			return backing.removeAll(c);
+		}
+
+		@Override
+		public boolean retainAll(LongCollection c) {
+			return backing.retainAll(c);
+		}
+
+		@Override
+		public int size() {
+			return backing.size();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return backing.isEmpty();
+		}
+
+		@Override
+		public Object[] toArray() {
+			return backing.toArray();
+		}
+
+		@Override
+		public <T> T[] toArray(T[] a) {
+			return backing.toArray(a);
+		}
+
+		@Override
+		public boolean containsAll(Collection<?> c) {
+			return backing.containsAll(c);
+		}
+
+		@Override
+		public boolean addAll(Collection<? extends Long> c) {
+			return backing.addAll(c);
+		}
+
+		@Override
+		public boolean removeAll(Collection<?> c) {
+			return backing.removeAll(c);
+		}
+
+		@Override
+		public boolean retainAll(Collection<?> c) {
+			return backing.retainAll(c);
+		}
+
+		@Override
+		public void clear() {
+			backing.clear();
+		}
+
+		@Override
+		public boolean remove(long k) {
+			return backing.remove(k);
+		}
+
+		@Override
+		public LongBidirectionalIterator iterator(long fromElement) {
+			return null;
+		}
+
+		@Override
+		public LongBidirectionalIterator iterator() {
+			return null;
+		}
+
+		@Override
+		public LongSortedSet subSet(long fromElement, long toElement) {
+			return null;
+		}
+
+		@Override
+		public LongSortedSet headSet(long toElement) {
+			return null;
+		}
+
+		@Override
+		public LongSortedSet tailSet(long fromElement) {
+			return null;
+		}
+
+		@Override
+		public LongComparator comparator() {
+			return null;
+		}
+
+		@Override
+		public long firstLong() {
+			return 0;
+		}
+
+		@Override
+		public long lastLong() {
+			return 0;
+		}
+		
+	}
+	
 	public static IntSet wrapIntSet(Set<Integer> intset) {
 		return new WrappingIntSet(intset);
 	}
