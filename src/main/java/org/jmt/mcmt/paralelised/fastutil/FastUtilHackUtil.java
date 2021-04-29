@@ -2,6 +2,7 @@ package org.jmt.mcmt.paralelised.fastutil;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
@@ -691,27 +692,28 @@ public class FastUtilHackUtil {
 
 		@Override
 		public LongBidirectionalIterator iterator(long fromElement) {
-			return null;
+			throw new UnsupportedOperationException();
+			//return FastUtilHackUtil.wrap(new LinkedList<Long>(backing).iterator());
 		}
 
 		@Override
 		public LongBidirectionalIterator iterator() {
-			return null;
+			return FastUtilHackUtil.wrap(new LinkedList<Long>(backing).iterator());
 		}
 
 		@Override
 		public LongSortedSet subSet(long fromElement, long toElement) {
-			return null;
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
 		public LongSortedSet headSet(long toElement) {
-			return null;
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
 		public LongSortedSet tailSet(long fromElement) {
-			return null;
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
@@ -721,12 +723,12 @@ public class FastUtilHackUtil {
 
 		@Override
 		public long firstLong() {
-			return 0;
+			return backing.stream().findAny().get();
 		}
 
 		@Override
 		public long lastLong() {
-			return 0;
+			return backing.stream().findAny().get();
 		}
 		
 	}

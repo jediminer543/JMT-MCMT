@@ -1,7 +1,6 @@
 package org.jmt.mcmt.paralelised.fastutil;
 
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.unimi.dsi.fastutil.Hash;
@@ -20,7 +19,6 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 	private static final long serialVersionUID = -2082212127278131631L;
 	
 	public Map<Long, Integer> backing = new ConcurrentHashMap<Long, Integer>();
-	int defaultRV = 0;
 
 	public Long2IntConcurrentNonLinkedOpenMap(final int expected, final float f) {
 
@@ -118,44 +116,84 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 	}
 
 	public int put(final long k, final int v) {
-		return backing.put(k, v);
+		Integer out = backing.put(k, v);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int addTo(final long k, final int incr) {
-		return backing.put(k, this.get(k)+incr);
+		Integer out =  backing.put(k, this.get(k)+incr);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int remove(final long k) {
-		return backing.remove(k);
+		Integer out = backing.remove(k);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int removeFirstInt() {
-		return backing.remove(backing.keySet().stream().findAny().get());
+		Integer out = this.remove(backing.keySet().stream().findAny().get());
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int removeLastInt() {
-		return backing.remove(backing.keySet().stream().findAny().get());
+		Integer out = this.remove(backing.keySet().stream().findAny().get());
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 
 	public int getAndMoveToFirst(final long k) {
-		return backing.get(k);
+		Integer out = backing.get(k);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int getAndMoveToLast(final long k) {
-		return backing.get(k);
+		Integer out = backing.get(k);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int putAndMoveToFirst(final long k, final int v) {
-		return backing.put(k, v);
+		Integer out =  backing.put(k, v);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int putAndMoveToLast(final long k, final int v) {
-		return backing.put(k, v);
+		Integer out =  backing.put(k, v);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int get(final long k) {
-		return backing.get(k);
+		Integer out =  backing.get(k);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public boolean containsKey(final long k) {
@@ -167,11 +205,19 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 	}
 
 	public int getOrDefault(final long k, final int defaultValue) {
-		return backing.getOrDefault(k, defaultValue);
+		Integer out =  backing.getOrDefault(k, defaultValue);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	public int putIfAbsent(final long k, final int v) {
-		return backing.putIfAbsent(k, v);
+		Integer out =  backing.putIfAbsent(k, v);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 
@@ -181,44 +227,69 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 
 
 	public boolean replace(final long k, final int oldValue, final int v) {
-		return backing.replace(k, oldValue, v);
+		return  backing.replace(k, oldValue, v);
 	}
 
 
 	public int replace(final long k, final int v) {
-		return backing.replace(k, v);
+		Integer out = backing.replace(k, v);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 
 	public int computeIfAbsent(final long k, final java.util.function.LongToIntFunction mappingFunction) {
-		return backing.computeIfAbsent(k, (l) -> mappingFunction.applyAsInt(l));
+		Integer out =  backing.computeIfAbsent(k, (l) -> mappingFunction.applyAsInt(l));
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 
 	public int computeIfAbsentNullable(final long k,
 			final java.util.function.LongFunction<? extends Integer> mappingFunction) {
-		return backing.computeIfAbsent(k, (l) -> mappingFunction.apply(l));
+		Integer out =  backing.computeIfAbsent(k, (l) -> mappingFunction.apply(l));
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 
 	public int computeIfPresent(final long k,
 			final java.util.function.BiFunction<? super Long, ? super Integer, ? extends Integer> remappingFunction) {
 		if (this.containsKey(k)) {
-			return backing.put(k, remappingFunction.apply(k, backing.get(k)));
+			Integer out =  backing.put(k, remappingFunction.apply(k, backing.get(k)));
+			if (out == null) {
+				return defRetValue;
+			}
+			return out;
 		}		
 		return defaultReturnValue();
+		
 	}
 
 	@Override
 	public int compute(final long k,
 			final java.util.function.BiFunction<? super Long, ? super Integer, ? extends Integer> remappingFunction) {
-		return backing.compute(k, remappingFunction);
+		Integer out =  backing.compute(k, remappingFunction);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	@Override
 	public int merge(final long k, final int v,
 			final java.util.function.BiFunction<? super Integer, ? super Integer, ? extends Integer> remappingFunction) {
-		return backing.merge(k, v, remappingFunction);
+		Integer out =  backing.merge(k, v, remappingFunction);
+		if (out == null) {
+			return defRetValue;
+		}
+		return out;
 	}
 
 	@Override
@@ -238,12 +309,12 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 
 	@Override
 	public long firstLongKey() {
-		throw new NoSuchElementException();
+		return backing.keySet().stream().findAny().get();
 	}
 
 	@Override
 	public long lastLongKey() {
-		throw new NoSuchElementException();
+		return backing.keySet().stream().findAny().get();
 	}
 
 	@Override
@@ -270,8 +341,6 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 	public FastSortedEntrySet long2IntEntrySet() {
 		return entries;
 	}
-
-	
 
 	@Override
 	public LongSortedSet keySet() {
