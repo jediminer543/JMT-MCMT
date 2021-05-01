@@ -2,19 +2,16 @@ package org.jmt.mcmt.paralelised.fastutil.sync;
 
 import java.util.Map;
 
-import org.jmt.mcmt.paralelised.fastutil.FastUtilHackUtil;
-import org.jmt.mcmt.paralelised.fastutil.Long2IntConcurrentNonLinkedOpenMap;
-
-import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntSortedMap;
 import it.unimi.dsi.fastutil.longs.LongComparator;
 import it.unimi.dsi.fastutil.longs.LongSortedSet;
-import it.unimi.dsi.fastutil.longs.Long2IntSortedMap.FastSortedEntrySet;
 
 public class SyncLong2IntLinkedOpenHashMap extends Long2IntLinkedOpenHashMap {
+
+	private static final long serialVersionUID = -6595301112279713248L;
 
 	public SyncLong2IntLinkedOpenHashMap(final int expected, final float f) {
 		super(expected, f);
