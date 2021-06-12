@@ -43,6 +43,56 @@ function toParallelHashSets(methodNode) {
 	}
 }
 
+function toParallelHashMaps(methodNode) {
+	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+	var MethodType = asmapi.MethodType;
+	var instructions = methodNode.instructions;
+	
+	var callMethod = "newHashMap";
+	var callClass = "com/google/common/collect/Maps";
+	var callDesc = "()Ljava/util/HashMap;";
+	
+	var tgtMethod = "newHashMap";
+	var tgtClass = "org/jmt/mcmt/asmdest/ConcurrentCollections";
+	var tgtDesc = "()Ljava/util/Map;";
+	
+	var invoke = asmapi.findFirstMethodCallAfter(methodNode, MethodType.STATIC, callClass, callMethod, callDesc, 0);
+	if (invoke != null) {
+		do {
+			invoke.owner = tgtClass;
+			invoke.name = tgtMethod;
+			invoke.desc = tgtDesc;
+		} while ((invoke = asmapi.findFirstMethodCallAfter(methodNode, 
+				MethodType.STATIC, callClass, callMethod, callDesc, instructions.indexOf(invoke))) != null)
+	}
+}
+
+function toParallelDeque(methodNode) {
+	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+	var MethodType = asmapi.MethodType;
+	var instructions = methodNode.instructions;
+	
+	//com/google/common/collect/Queues.newArrayDeque()Ljava/util/ArrayDeque;
+	var callMethod = "newArrayDeque";
+	var callClass = "com/google/common/collect/Queues";
+	var callDesc = "()Ljava/util/ArrayDeque;";
+	
+	var tgtMethod = "newArrayDeque";
+	var tgtClass = "org/jmt/mcmt/asmdest/ConcurrentCollections";
+	var tgtDesc = "()Ljava/util/Queue;";
+	
+	var invoke = asmapi.findFirstMethodCallAfter(methodNode, MethodType.STATIC, callClass, callMethod, callDesc, 0);
+	if (invoke != null) {
+		do {
+			invoke.owner = tgtClass;
+			invoke.name = tgtMethod;
+			invoke.desc = tgtDesc;
+		} while ((invoke = asmapi.findFirstMethodCallAfter(methodNode, 
+				MethodType.STATIC, callClass, callMethod, callDesc, instructions.indexOf(invoke))) != null)
+	}
+}
+
+
 function initializeCoreMod() {
     return {
     	'serverChunkProviderTick': {
@@ -103,6 +153,7 @@ function initializeCoreMod() {
             	print("[JMTSUPERTRANS] ServerWorldCollections Transformer Called");
             	
             	toParallelHashSets(methodNode);
+				toParallelDeque(methodNode);
             	
             	print("[JMTSUPERTRANS] ServerWorldCollections Transformer Complete");
             	
@@ -120,6 +171,7 @@ function initializeCoreMod() {
             	print("[JMTSUPERTRANS] ServerWorldCollections116 Transformer Called");
             	
             	toParallelHashSets(methodNode);
+				toParallelDeque(methodNode);
             	
             	print("[JMTSUPERTRANS] ServerWorldCollections116 Transformer Complete");
             	
@@ -137,6 +189,7 @@ function initializeCoreMod() {
             	print("[JMTSUPERTRANS] ServerWorldCollections116 Transformer Called");
             	
             	toParallelHashSets(methodNode);
+				toParallelDeque(methodNode);
             	
             	print("[JMTSUPERTRANS] ServerWorldCollections116 Transformer Complete");
             	
@@ -378,6 +431,23 @@ function initializeCoreMod() {
             	instructions.insert(callTarget, il);
             	            	
             	print("[JMTSUPERTRANS] PlayerEntityRemoveQueueSync Transformer Complete");
+            	
+            	return methodNode;
+            }
+    	},
+		'TemplateManagerHashMap': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.gen.feature.template.TemplateManager',
+                "methodName": "<init>",
+        		"methodDesc": "(Lnet/minecraft/resources/IResourceManager;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lcom/mojang/datafixers/DataFixer;)V"
+            },
+            "transformer": function(methodNode) {
+            	print("[JMTSUPERTRANS] TemplateManagerHashMap Transformer Called");
+            	
+            	toParallelHashMaps(methodNode);
+            	
+            	print("[JMTSUPERTRANS] TemplateManagerHashMap Transformer Complete");
             	
             	return methodNode;
             }

@@ -15,6 +15,7 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.ILocationArgument;
 import net.minecraft.command.arguments.Vec3Argument;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -107,6 +108,16 @@ public class DebugCommands {
 					cmdCtx.getSource().sendFeedback(message, true);
 					System.out.println(message.toString());
 					return 1;
-				}));
+				}))
+				/*
+				.then(Commands.literal("goinf").requires(cmdSrc -> {
+					return cmdSrc.hasPermissionLevel(2);
+				}).executes(cmdCtx -> {
+					ServerPlayerEntity p = cmdCtx.getSource().asPlayer();
+					p.setPosition(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+					return 1;
+				}))
+				*/
+				;
 	}
 }

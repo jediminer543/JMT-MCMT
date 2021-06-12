@@ -1,6 +1,12 @@
 package org.jmt.mcmt.modlauncher;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -164,6 +170,31 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap"));
+		//out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap"));
+		File f = new File("config/mcmt-sync-fu-list.txt");
+		if (f.exists()) {
+			try (BufferedReader r = new BufferedReader(new FileReader(f))) {
+				r.lines().filter(s -> !(s.startsWith("#") || s.startsWith("//") || s.equals(""))).map(s -> Target.targetClass(s)).forEach(t -> out.add(t));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		} else {
+			try {
+				f.createNewFile();
+				FileWriter fw = new FileWriter(f);
+				fw.write("// This file allows you to add targets to sync-fu\n"
+						+ "// Lines starting with // or # are comments\n"
+						+ "// This is done by specifying a class name\n"
+						+ "// As an example: \n"
+						+ "//it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap\n");
+				fw.flush();
+				fw.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		return out;
 	}
 	

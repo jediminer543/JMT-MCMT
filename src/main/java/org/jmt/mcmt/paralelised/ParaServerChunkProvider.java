@@ -82,7 +82,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		}
 		long i = ChunkPos.asLong(chunkX, chunkZ);
 
-		IChunk c = lookupChunk(i, requiredStatus);
+		IChunk c = lookupChunk(i, requiredStatus, false);
 		if (c != null) {
 			return c;
 		}
@@ -97,9 +97,28 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		
 		IChunk cl;
 		synchronized (this) {
+			//cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+			/*
+			ChunkCacheLine ccl;
+			ccl = chunkCache.computeIfAbsent(new ChunkCacheAddress(i, requiredStatus), a->new ChunkCacheLine(getChunkyThing(a.chunk, a.status, load)));
+			if (ccl != null) {
+				ccl.updateLastAccess();
+				return ccl.getChunk();
+			}
+			*/
+			// This shouldn't be needed but if it is well something definately brokey
 			cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
 		}
 		cacheChunk(i, cl, requiredStatus);
+		return cl;
+	}
+	
+	@SuppressWarnings("unused")
+	private IChunk getChunkyThing(long chunkPos, ChunkStatus requiredStatus, boolean load) {
+		IChunk cl;
+		synchronized (this) {
+			cl = super.getChunk(ChunkPos.getX(chunkPos), ChunkPos.getZ(chunkPos), requiredStatus, load);
+		}
 		return cl;
 	}
 
@@ -112,7 +131,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		}
 		long i = ChunkPos.asLong(chunkX, chunkZ);
 
-		IChunk c = lookupChunk(i, ChunkStatus.FULL);
+		IChunk c = lookupChunk(i, ChunkStatus.FULL, false);
 		if (c != null) {
 			return (Chunk) c;
 		}
@@ -125,19 +144,21 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	}
 	/* */
 
-	public IChunk lookupChunk(long chunkPos, ChunkStatus status) {
+	public IChunk lookupChunk(long chunkPos, ChunkStatus status, boolean compute) {
 		int oldaccess = access++;
 		if (access < oldaccess) {
 			// Long Rollover so super rare
 			chunkCache.clear();
 			return null;
 		}
-		ChunkCacheLine ccl = chunkCache.get(new ChunkCacheAddress(chunkPos, status));
+		ChunkCacheLine ccl;
+		ccl = chunkCache.get(new ChunkCacheAddress(chunkPos, status));
 		if (ccl != null) {
 			ccl.updateLastAccess();
 			return ccl.getChunk();
 		}
 		return null;
+		
 	}
 
 	public void cacheChunk(long chunkPos, IChunk chunk, ChunkStatus status) {

@@ -2,8 +2,11 @@ package org.jmt.mcmt.asmdest;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -20,7 +23,7 @@ public class ConcurrentCollections {
 		return Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
 	}
 	
-	public static <T, U> ConcurrentHashMap<T, U> newHashMap() {
+	public static <T, U> Map<T, U> newHashMap() {
 		LOGGER.info("Concurrent hash map created");
 		return new ConcurrentHashMap<T, U>();
 	}
@@ -33,4 +36,10 @@ public class ConcurrentCollections {
 	public static <T> Collector<T, ?, List<T>> toList() {
 		return Collectors.toCollection(CopyOnWriteArrayList::new);
     }
+	
+	public static <T> Queue<T> newArrayDeque() {
+		LOGGER.info("Concurrent \"array\" deque created");
+		return new ConcurrentLinkedDeque<T>();
+	}
+	
 }
