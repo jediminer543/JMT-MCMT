@@ -126,5 +126,66 @@ function initializeCoreMod() {
                 return methodNode;
             }
         },
+/*
+		'ChunkHolderNullCheck': {
+            'target': {
+            	'type': 'METHOD',
+                'class': 'net.minecraft.world.server.ChunkHolder',
+                "methodName": "func_219276_a",
+        		"methodDesc": "(Lnet/minecraft/world/chunk/ChunkStatus;Lnet/minecraft/world/server/ChunkManager;)Ljava/util/concurrent/CompletableFuture;"
+            },
+            'transformer': function(methodNode) {
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+            	var LabelNode = Java.type("org.objectweb.asm.tree.LabelNode");
+            	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+            	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
+            	var LdcInsnNode = Java.type("org.objectweb.asm.tree.LdcInsnNode");
+            	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+            	var MethodType = asmapi.MethodType;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ChunkHolderNullCheck Transformer Called");
+
+				//INVOKEVIRTUAL java/util/concurrent/CompletableFuture.getNow(Ljava/lang/Object;)Ljava/lang/Object;
+            	//mv.visitMethodInsn(INVOKEVIRTUAL, "net/minecraft/world/server/ServerChunkProvider", "getLoadedChunksCount", "()I", false);
+            	var targetMethodOwner = "java/util/concurrent/CompletableFuture";
+            	var targetMethodName = "getNow";//asmapi.mapMethod("func_217229_b"); 
+            	var targetMethodDesc = "(Ljava/lang/Object;)Ljava/lang/Object;";
+            	
+            	var method = methodNode
+            	        		
+        		var instructions = methodNode.instructions;
+        		
+        		var callTarget = asmapi.findFirstMethodCallAfter(method, MethodType.VIRTUAL, 
+        				targetMethodOwner, targetMethodName, targetMethodDesc, 0);
+        		
+        		if (callTarget != null) {
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] FOUND TARGET INSNS");
+        		} else {
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] MISSING TARGET INSNS:");
+        			asmapi.log("DEBUG", "[JMTSUPERTRANS] HAVE CALL:" + (callTarget != null));
+        			return;
+        		}
+        		
+        		
+        		//Call Hook
+        		
+        		var il = new InsnList();
+				//il.add(new InsnNode(opcodes.DUP));
+        		//il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
+        		//		"org/jmt/mcmt/asmdest/DebugHookTerminator", "checkNull",
+        		//		"(Ljava/lang/Object;)V", 
+				//		false));
+        		
+        		instructions.insert(callTarget, il);
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ChunkHolderNullCheck Transformer Complete");
+          
+                return methodNode;
+            }
+        },
+*/
     }
 }

@@ -16,6 +16,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.IChunk;
 import net.minecraft.world.chunk.storage.ChunkSerializer;
 import net.minecraft.world.server.ChunkHolder;
@@ -71,6 +72,16 @@ public class DebugHookTerminator {
 						}
 						completableFuture.complete(ChunkHolder.MISSING_CHUNK);
 					} else {
+						System.err.println(completableFuture.toString());
+						ChunkHolder chunkholder = scp.func_217213_a(chunkpos);
+						for (ChunkStatus cs : ChunkStatus.getAll()) {
+							CompletableFuture<Either<IChunk, IChunkLoadingError>> cf = chunkholder.func_219301_a(cs);
+							if (cf == ChunkHolder.MISSING_CHUNK_FUTURE) {
+								System.out.println("Status: " + cs.toString() + " is not yet loaded");
+							} else {
+								System.out.println("Status: " + cs.toString() + " is " + cf.toString());
+							}
+						}
 						completableFuture.complete(Either.right(new IChunkLoadingError() {
 							@Override
 							public String toString() {
@@ -80,6 +91,13 @@ public class DebugHookTerminator {
 					}
 				}
 			}
+		}
+	}
+	
+	public static void checkNull(Object o) {
+		if (o == null) {
+			System.out.println("Null warning:");
+			new Throwable("Null trace").printStackTrace();
 		}
 	}
 }

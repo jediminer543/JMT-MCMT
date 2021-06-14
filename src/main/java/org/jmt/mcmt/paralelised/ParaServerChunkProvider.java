@@ -80,6 +80,12 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 			}
 			return super.getChunk(chunkX, chunkZ, requiredStatus, load);
 		}
+		if (ASMHookTerminator.isThreadPooled("Main", Thread.currentThread())) {
+			return CompletableFuture.supplyAsync(() -> {
+	            return this.getChunk(chunkX, chunkZ, requiredStatus, load);
+	         }, this.executor).join();
+		}
+		
 		long i = ChunkPos.asLong(chunkX, chunkZ);
 
 		IChunk c = lookupChunk(i, requiredStatus, false);
@@ -88,12 +94,6 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		}
 		
 		//log.debug("Missed chunk " + i + " on status "  + requiredStatus.toString());
-		
-		if (ASMHookTerminator.isThreadPooled("Main", Thread.currentThread())) {
-			return CompletableFuture.supplyAsync(() -> {
-	            return this.getChunk(chunkX, chunkZ, requiredStatus, load);
-	         }, this.executor).join();
-		}
 		
 		IChunk cl;
 		synchronized (this) {
