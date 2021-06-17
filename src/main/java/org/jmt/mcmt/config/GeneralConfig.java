@@ -322,7 +322,7 @@ public class GeneralConfig {
 			builder.comment("This allows for tracing the operations invoked, to diagnose lockups/etc.");
 			logcap = builder
 					.comment("Maximum time between MCMT presence alerts in 10ms steps")
-					.defineInRange("opsTracing", 720000, 15000, Integer.MAX_VALUE);
+					.defineInRange("logcap", 720000, 15000, Integer.MAX_VALUE);
 		}
 
 	}

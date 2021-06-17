@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
@@ -41,8 +42,8 @@ import java.io.File;
 public class ParaServerChunkProvider extends ServerChunkProvider {
 
 	protected Map<ChunkCacheAddress, ChunkCacheLine> chunkCache = new ConcurrentHashMap<ChunkCacheAddress, ChunkCacheLine>();
-	protected int access = Integer.MIN_VALUE;
-	protected static final int CACHE_SIZE = 64;
+	protected AtomicInteger access = new AtomicInteger(Integer.MIN_VALUE);
+	protected static final int CACHE_SIZE = 512;
 	protected Thread cacheThread;
 	Logger log = LogManager.getLogger();
 	Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
@@ -145,8 +146,8 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	/* */
 
 	public IChunk lookupChunk(long chunkPos, ChunkStatus status, boolean compute) {
-		int oldaccess = access++;
-		if (access < oldaccess) {
+		int oldaccess = access.getAndIncrement();
+		if (access.get() < oldaccess) {
 			// Long Rollover so super rare
 			chunkCache.clear();
 			return null;
@@ -162,8 +163,8 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	}
 
 	public void cacheChunk(long chunkPos, IChunk chunk, ChunkStatus status) {
-		long oldaccess = access++;
-		if (access < oldaccess) {
+		long oldaccess = access.getAndIncrement();
+		if (access.get() < oldaccess) {
 			// Long Rollover so super rare
 			chunkCache.clear();
 		}
@@ -195,7 +196,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 			if (size < CACHE_SIZE)
 				continue;
 			// System.out.println("CacheFill: " + size);
-			long maxAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).max().orElseGet(() -> access);
+			long maxAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).max().orElseGet(() -> access.get());
 			long minAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).min()
 					.orElseGet(() -> Integer.MIN_VALUE);
 			long cutoff = minAccess + (long) ((maxAccess - minAccess) / ((float) size / ((float) CACHE_SIZE)));
@@ -240,7 +241,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		int lastAccess;
 
 		public ChunkCacheLine(IChunk chunk) {
-			this(chunk, access);
+			this(chunk, access.get());
 		}
 
 		public ChunkCacheLine(IChunk chunk, int lastAccess) {
@@ -257,7 +258,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		}
 
 		public void updateLastAccess() {
-			lastAccess = access;
+			lastAccess = access.get();
 		}
 
 		public void updateChunkRef(IChunk c) {

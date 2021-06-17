@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // This is highly WIP, please ignore for now
-
+@SuppressWarnings("unused")
 public class LockAwareThreadPool extends AbstractExecutorService {
 
 	private volatile boolean isShutdown;

@@ -171,7 +171,7 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap"));
 		//out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap"));
-		File f = new File("config/mcmt-sync-fu-list.txt");
+		File f = new File("config/jmt_mcmt-sync-fu-list.txt");
 		if (f.exists()) {
 			try (BufferedReader r = new BufferedReader(new FileReader(f))) {
 				r.lines().filter(s -> !(s.startsWith("#") || s.startsWith("//") || s.equals(""))).map(s -> Target.targetClass(s)).forEach(t -> out.add(t));
