@@ -40,7 +40,7 @@ function initializeCoreMod() {
 				instructions.add(new VarInsnNode(opcodes.ALOAD, 0));
 				instructions.add(new MethodInsnNode(opcodes.INVOKESPECIAL, 
 					"net/minecraft/util/concurrent/RecursiveEventLoop", 
-					"isOnExecutionThread", "()Z", false
+					targetNode.name, "()Z", false
 				));
 				instructions.add(new VarInsnNode(opcodes.ALOAD, 0));
 				instructions.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
