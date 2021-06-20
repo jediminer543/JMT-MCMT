@@ -2,6 +2,7 @@
   "worldparallel": "trans/worldparallel.js",
   "entityparallel": "trans/entityparallel.js",
   "envparallel": "trans/envparallel.js",
+  "etpparallel": "trans/etpparallel.js",
   "teparallel": "trans/teparallel.js",
   "scpcoaccess": "trans/general/scpcoaccess.js",
   "generalparallel": "trans/general/generalparallel.js",

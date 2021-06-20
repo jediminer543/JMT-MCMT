@@ -98,16 +98,9 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		
 		IChunk cl;
 		synchronized (this) {
-			//cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
-			/*
-			ChunkCacheLine ccl;
-			ccl = chunkCache.computeIfAbsent(new ChunkCacheAddress(i, requiredStatus), a->new ChunkCacheLine(getChunkyThing(a.chunk, a.status, load)));
-			if (ccl != null) {
-				ccl.updateLastAccess();
-				return ccl.getChunk();
+			if (chunkCache.containsKey(new ChunkCacheAddress(i, requiredStatus)) && (c = lookupChunk(i, requiredStatus, false)) != null) {
+				return c;
 			}
-			*/
-			// This shouldn't be needed but if it is well something definately brokey
 			cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
 		}
 		cacheChunk(i, cl, requiredStatus);

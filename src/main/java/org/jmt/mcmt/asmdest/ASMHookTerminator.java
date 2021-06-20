@@ -69,6 +69,7 @@ public class ASMHookTerminator {
 		ForkJoinWorkerThreadFactory fjpf = p -> {
 			ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
 			fjwt.setName("MCMT-Pool-Thread-"+threadID.getAndIncrement());
+			regThread("MCMT", fjwt);
 			fjwt.setContextClassLoader(cl);
 			return fjwt;
 		};
@@ -104,6 +105,10 @@ public class ASMHookTerminator {
 	
 	public static boolean isThreadPooled(String poolName, Thread t) {
 		return mcThreadTracker.containsKey(poolName) && mcThreadTracker.get(poolName).contains(t);
+	}
+	
+	public static boolean serverExecutionThreadPatch(MinecraftServer ms) {
+		return isThreadPooled("MCMT", Thread.currentThread());
 	}
 
 	public static void preTick(MinecraftServer server) {
