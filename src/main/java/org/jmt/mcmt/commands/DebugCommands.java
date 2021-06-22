@@ -7,6 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
@@ -15,12 +19,16 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.ILocationArgument;
 import net.minecraft.command.arguments.Vec3Argument;
+import net.minecraft.command.impl.LocateCommand;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.gen.feature.structure.Structure;
 import net.minecraft.world.server.ServerWorld;
 
 public class DebugCommands {
@@ -108,6 +116,31 @@ public class DebugCommands {
 					System.out.println(message.toString());
 					return 1;
 				}))
+				.then(Commands.literal("test").requires(cmdSrc -> {
+					return cmdSrc.hasPermissionLevel(2);
+				}).then(Commands.literal("structures").executes(cmdCtx -> {
+					ServerPlayerEntity p = cmdCtx.getSource().asPlayer();
+					BlockPos srcpos = p.getPosition();
+					UUID id = PlayerEntity.getUUID(p.getGameProfile());
+					int index = structureIdx.computeIfAbsent(id.toString(), (s) -> new AtomicInteger()).getAndIncrement();
+					Structure<?>[] targets = net.minecraftforge.registries.ForgeRegistries.STRUCTURE_FEATURES.getValues().toArray(new Structure<?>[10]);
+					Structure<?> target = null;
+					if (index >= targets.length) {
+						target = targets[0];
+						structureIdx.computeIfAbsent(id.toString(), (s) -> new AtomicInteger()).set(0);
+					} else {
+						target = targets[index];
+					}
+					BlockPos dst = cmdCtx.getSource().getWorld().func_241117_a_(target, srcpos, 100, false);
+					if (dst == null) {
+						StringTextComponent message = new StringTextComponent("Failed locating " + target.getStructureName() + " from " + srcpos);
+						cmdCtx.getSource().sendFeedback(message, true);
+						return 1;
+					}
+					p.teleportKeepLoaded(dst.getX(), srcpos.getY(), dst.getZ());
+					LocateCommand.func_241054_a_(cmdCtx.getSource(), target.getStructureName(), srcpos, dst, "commands.locate.success");
+					return 1;
+				})))
 				/*
 				.then(Commands.literal("goinf").requires(cmdSrc -> {
 					return cmdSrc.hasPermissionLevel(2);
@@ -119,4 +152,6 @@ public class DebugCommands {
 				*/
 				;
 	}
+	
+	private static Map<String, AtomicInteger> structureIdx = new ConcurrentHashMap<>();
 }
