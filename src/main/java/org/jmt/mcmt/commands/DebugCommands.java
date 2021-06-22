@@ -116,6 +116,7 @@ public class DebugCommands {
 					System.out.println(message.toString());
 					return 1;
 				}))
+				/* 1.16.1 code; AKA the only thing that changed  */
 				.then(Commands.literal("test").requires(cmdSrc -> {
 					return cmdSrc.hasPermissionLevel(2);
 				}).then(Commands.literal("structures").executes(cmdCtx -> {
@@ -141,6 +142,7 @@ public class DebugCommands {
 					LocateCommand.func_241054_a_(cmdCtx.getSource(), target.getStructureName(), srcpos, dst, "commands.locate.success");
 					return 1;
 				})))
+				/* */
 				/*
 				.then(Commands.literal("goinf").requires(cmdSrc -> {
 					return cmdSrc.hasPermissionLevel(2);
