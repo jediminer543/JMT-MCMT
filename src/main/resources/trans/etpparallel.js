@@ -13,14 +13,13 @@ function initializeCoreMod() {
             	var LabelNode = Java.type("org.objectweb.asm.tree.LabelNode");
             	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
             	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
-				var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
-				var FrameNode = Java.type("org.objectweb.asm.tree.FrameNode");
+				var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
 
             	asmapi.log("INFO", "[JMTSUPERTRANS] ServerExecutionThread Transformer Called");
             	
             	var methods = classNode.methods;
-				
+
 				var targetNode = asmapi.getMethodNode();
 				targetNode.name = asmapi.mapMethod("func_213162_bc");
 				targetNode.desc = "()Z";
@@ -42,14 +41,45 @@ function initializeCoreMod() {
 					"net/minecraft/util/concurrent/RecursiveEventLoop", 
 					targetNode.name, "()Z", false
 				));
-				instructions.add(new VarInsnNode(opcodes.ALOAD, 0));
-				instructions.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
-            				"org/jmt/mcmt/asmdest/ASMHookTerminator", "serverExecutionThreadPatch",
-            				"(Lnet/minecraft/server/MinecraftServer;)Z" ,false))
-				instructions.add(new InsnNode(opcodes.IOR));
 				instructions.add(new InsnNode(opcodes.IRETURN));
 				instructions.add(fn_end);
-				methods.add(targetNode);
+
+				var hit = false;
+				for (var mn in methods) {
+					if (mn.name == targetNode.name && mn.desc == targetNode.desc) {
+						hit = true;
+						targetNode = mn;
+						break;
+					}
+				}
+				
+				if (!hit) {
+					methods.add(targetNode);
+				}
+				
+				instructions = targetNode.instructions;
+				
+				var il = new InsnList();
+				il.add(new VarInsnNode(opcodes.ALOAD, 0));
+				il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
+            				"org/jmt/mcmt/asmdest/ASMHookTerminator", "serverExecutionThreadPatch",
+            				"(Lnet/minecraft/server/MinecraftServer;)Z" ,false))
+				il.add(new InsnNode(opcodes.IOR));
+				
+				insn = targetNode.instructions.getFirst();
+				
+				while (insn != null) {
+					if (insn.opcode == opcodes.IRETURN) {
+						targetNode.instructions.insertBefore(insn, il);
+						il = new InsnList();
+						il.add(new VarInsnNode(opcodes.ALOAD, 0));
+						il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
+		            				"org/jmt/mcmt/asmdest/ASMHookTerminator", "serverExecutionThreadPatch",
+		            				"(Lnet/minecraft/server/MinecraftServer;)Z" ,false))
+						il.add(new InsnNode(opcodes.IOR));
+					}
+					insn = insn.getNext();
+				}
 				            	
             	asmapi.log("INFO", "[JMTSUPERTRANS] ServerExecutionThread Transformer Complete");
             	
