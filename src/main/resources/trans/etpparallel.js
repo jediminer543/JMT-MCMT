@@ -45,7 +45,9 @@ function initializeCoreMod() {
 				instructions.add(fn_end);
 
 				var hit = false;
-				for (var mn in methods) {
+				for (var i in methods) {
+            		var mn = methods[i];
+					asmapi.log("INFO", "[JMTSUPERTRANS] Saw method " + mn.name + " " + mn.desc);
 					if (mn.name == targetNode.name && mn.desc == targetNode.desc) {
 						hit = true;
 						targetNode = mn;

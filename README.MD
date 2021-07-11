@@ -2,10 +2,12 @@
 [![Issues](https://img.shields.io/github/issues/jediminer543/JMT-MCMT?style=for-the-badge)](https://github.com/jediminer543/JMT-MCMT/issues)
 [![Build Statis](https://img.shields.io/github/workflow/status/jediminer543/JMT-MCMT/Java%20CI%20with%20Gradle?style=for-the-badge)](https://github.com/jediminer543/JMT-MCMT/actions/workflows/build-dev.yml)
 [![Curseforge Downloads](https://img.shields.io/badge/dynamic/json?label=Curse%20Downloads&query=downloads.total&url=https%3A%2F%2Fapi.cfwidget.com%2Fminecraft%2Fmc-mods%2Fmcmt-multithreading&style=for-the-badge)](https://www.curseforge.com/minecraft/mc-mods/mcmt-multithreading)
+[![Support Me](https://forthebadge.com/images/badges/built-with-love.svg)](https://ko-fi.com/jediminer543)
+[![Shenanagins](https://forthebadge.com/images/badges/powered-by-black-magic.svg)](https://www.youtube.com/watch?v=djV11Xbc914)
 
 # MCMT - Minecraft Multi-Threading Mod
 
-This is a mod for Minecraft (forge) versions 1.15.2 and 1.16.1 that enables multithreading
+This is a mod for Minecraft (forge) versions 1.15.2 and 1.16.x that enables multithreading
 
 Currently it supports multithreading worlds, entities, tile entities, and environment ticks; 
 under testing it has appeared to work with mods.
