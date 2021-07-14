@@ -35,8 +35,15 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InnerClassNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import cpw.mods.modlauncher.api.IEnvironment;
 import cpw.mods.modlauncher.api.ITransformationService;
@@ -143,16 +150,69 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 	@Override
 	public ClassNode transform(ClassNode input, ITransformerVotingContext context) {
 		LOGGER.info(marker, "sync_fu " + input.name + " Transformer Called");
-		for (MethodNode mn : input.methods) {
-			if ((mn.access & posfilter) == posfilter
-					&& (mn.access & negfilter) == 0
-					&& !mn.name.equals("<init>")) {
-				mn.access |= Opcodes.ACC_SYNCHRONIZED;
-				LOGGER.debug(marker, "Patching " + mn.name);
+		if (!input.name.contains("$")) {
+			for (MethodNode mn : input.methods) {
+				if ((mn.access & posfilter) == posfilter
+						&& (mn.access & negfilter) == 0
+						&& !mn.name.equals("<init>")) {
+					mn.access |= Opcodes.ACC_SYNCHRONIZED;
+					LOGGER.debug(marker, "Patching " + mn.name);
+				}
 			}
+			LOGGER.info(marker, "sync_fu " + input.name + " Transformer Complete");
+			for (InnerClassNode cn : input.innerClasses) {
+				LOGGER.warn(marker, "sync_fu: you are missing " + cn.name + " this may bite you later");
+			}
+			return input;
+		} else {
+			String parent = null;
+			for (FieldNode fn : input.fields) {
+				if (fn.name.equals("this$0")) {
+					parent = fn.desc;
+				}
+			}
+			if (parent == null) {
+				LOGGER.error(marker, "Inner class faliure; parent not found ");
+				return input;
+			}
+			LOGGER.info(marker, "sync_fu inner class of " + parent);
+			for (MethodNode mn : input.methods) {
+				InsnList start = new InsnList();
+				InsnList end = new InsnList();
+				if ((mn.access & posfilter) == posfilter
+						&& (mn.access & negfilter) == 0
+						&& !mn.name.equals("<init>")) {
+					start = new InsnList();
+					start.add(new VarInsnNode(Opcodes.ALOAD, 0));
+					start.add(new FieldInsnNode(Opcodes.GETFIELD, input.name, "this$0", parent));
+					start.add(new InsnNode(Opcodes.MONITORENTER));
+					end = new InsnList();
+					end.add(new VarInsnNode(Opcodes.ALOAD, 0));
+					end.add(new FieldInsnNode(Opcodes.GETFIELD, input.name, "this$0", parent));
+					end.add(new InsnNode(Opcodes.MONITOREXIT));
+					InsnList il = mn.instructions;
+					AbstractInsnNode ain = il.getFirst();
+					while (ain != null) {
+						if (ain.getOpcode() == Opcodes.RETURN  ||
+							ain.getOpcode() == Opcodes.ARETURN ||
+							ain.getOpcode() == Opcodes.DRETURN ||
+							ain.getOpcode() == Opcodes.FRETURN ||
+							ain.getOpcode() == Opcodes.IRETURN ||
+							ain.getOpcode() == Opcodes.LRETURN) {
+							il.insertBefore(ain, end);
+							end = new InsnList();
+							end.add(new VarInsnNode(Opcodes.ALOAD, 0));
+							end.add(new FieldInsnNode(Opcodes.GETFIELD, input.name, "this$0", parent));
+							end.add(new InsnNode(Opcodes.MONITOREXIT));
+						}
+						ain = ain.getNext();
+					}
+					il.insertBefore(il.getFirst(), start);
+				}
+			}
+			LOGGER.info(marker, "sync_fu " + input.name + " InnerClass Transformer Complete");
+			return input;
 		}
-		LOGGER.info(marker, "sync_fu " + input.name + " Transformer Complete");
-		return input;
 	}
 
 	@Override
@@ -170,6 +230,7 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap"));
+		//out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap$MapIterator"));
 		//out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap"));
 		File f = new File("config/jmt_mcmt-sync-fu-list.txt");
 		if (f.exists()) {
