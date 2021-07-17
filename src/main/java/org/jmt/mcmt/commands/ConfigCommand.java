@@ -182,7 +182,7 @@ public class ConfigCommand {
 						BlockPos bp = ((BlockRayTraceResult)rtr).getPos();
 						TileEntity te = cmdCtx.getSource().getWorld().getTileEntity(bp);
 						if (te != null && te instanceof ITickableTileEntity) {
-							boolean willSerial = ASMHookTerminator.filterTE((ITickableTileEntity)te);
+							boolean willSerial = ASMHookTerminator.filterTickableEntity((ITickableTileEntity)te);
 							message = new StringTextComponent("That TE " + (!willSerial ? "will" : "will not") + " tick fully parallelised");
 							cmdCtx.getSource().sendFeedback(message, true);
 							return 1;

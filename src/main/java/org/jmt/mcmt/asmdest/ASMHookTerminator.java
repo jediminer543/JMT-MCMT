@@ -43,7 +43,7 @@ import net.minecraftforge.fml.CrashReportExtender;
  * So DON'T rename this file (Or there will be a lot of other work todo)
  * 
  * Fun point: So because this is hooking into a lot of the stuff, be careful what you reference here
- * I attempted to reference a function on {@link GeneralConfig} and it got VERY angery at me with a "class refuses to load" error
+ * I attempted to reference a function on {@link GeneralConfig} and it got VERY angry at me with a "class refuses to load" error
  * So remember that if you start getting class loading errors
  * 
  * 
@@ -55,14 +55,14 @@ import net.minecraftforge.fml.CrashReportExtender;
 public class ASMHookTerminator {
 
 	private static final Logger LOGGER = LogManager.getLogger();
-	
-	static Phaser p;
-	static ExecutorService ex;
-	static MinecraftServer mcs;
+
+	static Phaser phaser;
+	static ExecutorService exec;
+	static MinecraftServer mcServer;
 	static AtomicBoolean isTicking = new AtomicBoolean();
 	static AtomicInteger threadID = new AtomicInteger();
-	
-	
+
+
 	public static void setupThreadpool(int parallelism) {
 		threadID = new AtomicInteger();
 		final ClassLoader cl = MCMT.class.getClassLoader();
@@ -73,12 +73,13 @@ public class ASMHookTerminator {
 			fjwt.setContextClassLoader(cl);
 			return fjwt;
 		};
-		ex = new ForkJoinPool(
+
+		exec = new ForkJoinPool(
 				parallelism,
-				 fjpf,
-	             null, false);
+				fjpf,	
+				null, false);
 	}
-	
+
 	/**
 	 * Creates and sets up the thread pool
 	 */
@@ -86,44 +87,44 @@ public class ASMHookTerminator {
 		// Must be static here due to class loading shenanagins
 		setupThreadpool(4);
 	}
-	
+
 	static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
-	
+
 	// Statistics
 	public static AtomicInteger currentWorlds = new AtomicInteger();
 	public static AtomicInteger currentEnts = new AtomicInteger();
 	public static AtomicInteger currentTEs = new AtomicInteger();
 	public static AtomicInteger currentEnvs = new AtomicInteger();
-	
+
 	//Operation logging
 	public static Set<String> currentTasks = ConcurrentHashMap.newKeySet(); 
-	
-	
+
+
 	public static void regThread(String poolName, Thread thread) {
 		mcThreadTracker.computeIfAbsent(poolName, s -> ConcurrentHashMap.newKeySet()).add(thread);
 	}
-	
+
 	public static boolean isThreadPooled(String poolName, Thread t) {
 		return mcThreadTracker.containsKey(poolName) && mcThreadTracker.get(poolName).contains(t);
 	}
-	
+
 	public static boolean serverExecutionThreadPatch(MinecraftServer ms) {
 		return isThreadPooled("MCMT", Thread.currentThread());
 	}
 
 	public static void preTick(MinecraftServer server) {
-		if (p != null) {
+		if (phaser != null) {
 			LOGGER.warn("Multiple servers?");
 			return;
 		} else {
 			isTicking.set(true);
-			p = new Phaser();
-			p.register();
-			mcs = server;
-			StatsCommand.setServer(mcs);
+			phaser = new Phaser();
+			phaser.register();
+			mcServer = server;
+			StatsCommand.setServer(mcServer);
 		}
 	}
-	
+
 	public static void callTick(ServerWorld serverworld, BooleanSupplier hasTimeLeft, MinecraftServer server) {
 		if (GeneralConfig.disabled || GeneralConfig.disableWorld) {
 			try {
@@ -135,7 +136,8 @@ public class ASMHookTerminator {
 			}
 			return;
 		}
-		if (mcs != server) {
+		
+		if (mcServer != server) {
 			LOGGER.warn("Multiple servers?");
 			GeneralConfig.disabled = true;
 			serverworld.tick(hasTimeLeft);
@@ -144,44 +146,44 @@ public class ASMHookTerminator {
 		} else {
 			String taskName = null;
 			if (GeneralConfig.opsTracing) {
-				 taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
+				taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
 				currentTasks.add(taskName);
 			}
 			String finalTaskName = taskName;
-			p.register();
-			ex.execute(() -> {
+			phaser.register();
+			exec.execute(() -> {
 				try {
 					currentWorlds.incrementAndGet();
 					serverworld.tick(hasTimeLeft);
-					if (GeneralConfig.disableWorldPostTick) {
-						p.register();
-						ex.execute(() -> {
+					if (!GeneralConfig.disableWorldPostTick) {
+						phaser.register();
+						exec.execute(() -> {
 							try {
 								//ForkJoinPool.managedBlock(
 								//		new RunnableManagedBlocker(() ->  { 
-												synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
-													net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-												}
+								synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
+									net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+								}
 								//		}));
-							//} catch (InterruptedException e) {
-							//	e.printStackTrace();
+								//} catch (InterruptedException e) {
+								//	e.printStackTrace();
 							} finally {
-								p.arriveAndDeregister();
+								phaser.arriveAndDeregister();
 							}
 						});
 					} else {
 						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 					}
 				} finally {
-					p.arriveAndDeregister();
+					phaser.arriveAndDeregister();
 					currentWorlds.decrementAndGet();
 					if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 				}
 			});
 		}
-		
+
 	}
-	
+
 	public static void callEntityTick(Entity entityIn, ServerWorld serverworld) {
 		if (GeneralConfig.disabled || GeneralConfig.disableEntity) {
 			entityIn.tick();
@@ -193,19 +195,19 @@ public class ASMHookTerminator {
 			currentTasks.add(taskName);
 		}
 		String finalTaskName = taskName;
-		p.register();
-		ex.execute(() -> {
+		phaser.register();
+		exec.execute(() -> {
 			try {
 				currentEnts.incrementAndGet();
 				entityIn.tick();
 			} finally {
 				currentEnts.decrementAndGet();
-				p.arriveAndDeregister();
+				phaser.arriveAndDeregister();
 				if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 			}
 		});
 	}
-	
+
 	public static void callTickEnvironment(ServerWorld world, Chunk chunk, int k, ServerChunkProvider scp) {
 		if (GeneralConfig.disabled  || GeneralConfig.disableEnvironment) {
 			world.tickEnvironment(chunk, k);
@@ -217,20 +219,20 @@ public class ASMHookTerminator {
 			currentTasks.add(taskName);
 		}
 		String finalTaskName = taskName;
-		p.register();
-		ex.execute(() -> {
+		phaser.register();
+		exec.execute(() -> {
 			try {
 				currentEnvs.incrementAndGet();
 				world.tickEnvironment(chunk, k);
 			} finally {
 				currentEnvs.decrementAndGet();
-				p.arriveAndDeregister();
+				phaser.arriveAndDeregister();
 				if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 			}
 		});
 	}
-	
-	public static boolean filterTE(ITickableTileEntity tte) {
+
+	public static boolean filterTickableEntity(ITickableTileEntity tte) {
 		boolean isLocking = false;
 		if (GeneralConfig.teBlackList.contains(tte.getClass())) {
 			isLocking = true;
@@ -247,7 +249,7 @@ public class ASMHookTerminator {
 		}
 		return isLocking;
 	}
-		
+
 	public static void callTileEntityTick(ITickableTileEntity tte, World world) {
 		if (GeneralConfig.disabled  || GeneralConfig.disableTileEntity || !(world instanceof ServerWorld)) {
 			tte.tick();
@@ -258,21 +260,21 @@ public class ASMHookTerminator {
 			taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
 			currentTasks.add(taskName);
 		}
-		p.register();
+		phaser.register();
 		String finalTaskName = taskName;
-		ex.execute(() -> {
+		exec.execute(() -> {
 			try {
-				final boolean doLock = filterTE(tte);
+				final boolean doLock = filterTickableEntity(tte);
 				if (doLock) {
 					//ForkJoinPool.managedBlock(new RunnableManagedBlocker(() -> {
-						BlockPos bp = ((TileEntity) tte).getPos();
-						long[] locks = ChunkLock.lock(bp, 1);
-						try {
-							currentTEs.incrementAndGet();
-							tte.tick();
-						} finally {
-							ChunkLock.unlock(locks);
-						}
+					BlockPos bp = ((TileEntity) tte).getPos();
+					long[] locks = ChunkLock.lock(bp, 1);
+					try {
+						currentTEs.incrementAndGet();
+						tte.tick();
+					} finally {
+						ChunkLock.unlock(locks);
+					}
 					//}));
 				} else {
 					currentTEs.incrementAndGet();
@@ -283,12 +285,12 @@ public class ASMHookTerminator {
 				e.printStackTrace();
 			} finally {
 				currentTEs.decrementAndGet();
-				p.arriveAndDeregister();
+				phaser.arriveAndDeregister();
 				if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 			}
 		});
 	}
-	
+
 	public static void sendQueuedBlockEvents(Deque<BlockEventData> d, ServerWorld sw) {
 		Iterator<BlockEventData> bed = d.iterator();
 		while (bed.hasNext()) {
@@ -307,18 +309,18 @@ public class ASMHookTerminator {
 			bed.remove();
 		}
 	}
-	
+
 	public static void postTick(MinecraftServer server) {
-		if (mcs != server) {
+		if (mcServer != server) {
 			LOGGER.warn("Multiple servers?");
 			return;
 		} else {
-			p.arriveAndAwaitAdvance();
+			phaser.arriveAndAwaitAdvance();
 			isTicking.set(false);
-			p = null;
+			phaser = null;
 		}
 	}
-	
+
 	public static String populateCrashReport() {
 		StringBuilder confInfo = new StringBuilder();
 		confInfo.append("\n");
@@ -346,11 +348,11 @@ public class ASMHookTerminator {
 		}
 		return confInfo.toString();
 	}
-	
+
 	static {
 		CrashReportExtender.registerCrashCallable("MCMT", ASMHookTerminator::populateCrashReport);
 	}
-		
+
 	public static <T> void fixSTL(ServerTickList<T> stl) {
 		LOGGER.debug("FixSTL Called");
 		stl.pendingTickListEntriesTreeSet.addAll(stl.pendingTickListEntriesHashSet);

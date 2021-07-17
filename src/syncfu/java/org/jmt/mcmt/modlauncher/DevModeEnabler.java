@@ -24,6 +24,7 @@ public class DevModeEnabler implements ITransformer<ClassNode> {
 
 	
 	private static final Logger LOGGER = LogManager.getLogger();
+	@SuppressWarnings("unused")
 	private static final Marker M_LOCATOR = MarkerManager.getMarker("LOCATE");
 	private boolean isActive = true;
 	

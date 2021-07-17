@@ -23,14 +23,13 @@ import net.minecraft.world.server.ChunkHolder;
 import net.minecraft.world.server.ChunkHolder.IChunkLoadingError;
 import net.minecraft.world.server.ServerChunkProvider;
 
-// TODO Should be renamed ChunkRepairHookTerminator (Note requres coremod edit)
 /**
- * Handles chunk forcing in scenarios where world corruption has occured
+ * Handles chunk forcing in scenarios where world corruption has occurred
  * 
  * @author jediminer543
  *
  */
-public class DebugHookTerminator {
+public class ChunkRepairHookTerminator {
 	
 	private static final Logger LOGGER = LogManager.getLogger();
 	
@@ -40,20 +39,28 @@ public class DebugHookTerminator {
 		return bypassLoadTarget;
 	}
 		
-	public static void chunkLoadDrive(ServerChunkProvider.ChunkExecutor executor, BooleanSupplier isDone, ServerChunkProvider scp, 
-			CompletableFuture<Either<IChunk, IChunkLoadingError>> completableFuture, long chunkpos) {
+	public static void chunkLoadDrive(
+			ServerChunkProvider.ChunkExecutor executor,
+			BooleanSupplier isDone,
+			ServerChunkProvider scp, 
+			CompletableFuture<Either<IChunk, IChunkLoadingError>> completableFuture, 
+			long chunkpos) {
+		
 		if (!GeneralConfig.enableChunkTimeout) {
 			bypassLoadTarget = false;
 			executor.driveUntil(isDone);
 			return;
 		}
+		
 		int failcount = 0;
 		while (!isDone.getAsBoolean()) {
+			
 			if (!executor.driveOne()) {
+				
 				if(isDone.getAsBoolean()) {
-					break;
+					break; // Nothing more to execute
 				}
-				// Nothing more to execute
+				
 				if (failcount++ < GeneralConfig.timeoutCount) {
 					Thread.yield();
 					LockSupport.parkNanos("THE END IS ~~NEVER~~ LOADING", 100000L);
