@@ -330,9 +330,11 @@ public class ASMHookTerminator {
 		} else {
 			// phaser.arriveAndAwaitAdvance();
 			try {
+				// arrive and wait for up to 1 second (20 ticks)
 				phaser.awaitAdvanceInterruptibly(phaser.arrive(), 1, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				LOGGER.fatal("Waiting for ticks interrupted: ", e);
+				phaser.awaitAdvance(phaser.getPhase()); // wait for this tick to complete
 			} catch (TimeoutException e) {
 				LOGGER.error("This tick has taken longer than 1 second, investigating...");
 				LOGGER.error("Current stuck tasks:");
