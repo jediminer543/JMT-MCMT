@@ -4,12 +4,15 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
@@ -113,16 +116,26 @@ public class ASMHookTerminator {
 	}
 
 	public static void preTick(MinecraftServer server) {
-		if (phaser != null) {
-			LOGGER.warn("Multiple servers?");
-			return;
-		} else {
-			isTicking.set(true);
+		// enable phaser reuse
+//		if (phaser != null) {
+//			LOGGER.warn("Multiple servers?");
+//			return;
+//		} else {
+//			isTicking.set(true);
+//			phaser = new Phaser();
+//			phaser.register();
+//			mcServer = server;
+//			StatsCommand.setServer(mcServer);
+//		}
+		// if the phaser does not exist or is terminated, recreate it
+		if (phaser == null || phaser.isTerminated()) {
 			phaser = new Phaser();
-			phaser.register();
-			mcServer = server;
-			StatsCommand.setServer(mcServer);
 		}
+		// set up for the next tick
+		isTicking.set(true);
+		phaser.register();
+		mcServer = server;
+		StatsCommand.setServer(server);
 	}
 
 	public static void callTick(ServerWorld serverworld, BooleanSupplier hasTimeLeft, MinecraftServer server) {
@@ -315,9 +328,29 @@ public class ASMHookTerminator {
 			LOGGER.warn("Multiple servers?");
 			return;
 		} else {
-			phaser.arriveAndAwaitAdvance();
+			// phaser.arriveAndAwaitAdvance();
+			try {
+				phaser.awaitAdvanceInterruptibly(phaser.arrive(), 1, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				LOGGER.fatal("Waiting for ticks interrupted: ", e);
+			} catch (TimeoutException e) {
+				LOGGER.error("This tick has taken longer than 1 second, investigating...");
+				LOGGER.error("Current stuck tasks:");
+				StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
+				for (String taskName : currentTasks) sj.add(taskName);
+				LOGGER.error(sj.toString());
+				
+				if (GeneralConfig.continueAfterStuckTick) {
+					LOGGER.fatal("CONTINUING AFTER STUCK TICK! I REALLY hope you have backups...");
+					phaser.forceTermination(); // forces termination of phaser
+				} else {
+					LOGGER.error("Continuing to wait for tick to complete... (don't hold your breath)");
+					phaser.awaitAdvance(phaser.getPhase()); // wait for this tick to complete (but if we're here, it probably won't)
+				}
+			}
 			isTicking.set(false);
-			phaser = null;
+			// probably faster if we just use the same phaser
+			// phaser = null;
 		}
 	}
 

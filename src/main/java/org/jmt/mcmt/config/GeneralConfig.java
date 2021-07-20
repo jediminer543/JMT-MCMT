@@ -77,6 +77,8 @@ public class GeneralConfig {
 	public static boolean opsTracing;
 	public static int logcap;
 	
+	public static boolean continueAfterStuckTick;
+	
 	//Forge stuff
 	public static final GeneralConfigTemplate GENERAL;
 	public static final ForgeConfigSpec GENERAL_SPEC;
@@ -150,6 +152,8 @@ public class GeneralConfig {
 		opsTracing = GENERAL.opsTracing.get();
 		logcap = GENERAL.logcap.get();
 		
+		continueAfterStuckTick = GENERAL.continueAfterStuckTick.get();
+		
 		teWhiteList = ConcurrentHashMap.newKeySet();//new HashSet<Class<?>>();
 		teUnfoundWhiteList = new ArrayList<String>();
 		GENERAL.teWhiteList.get().forEach(str -> {
@@ -197,6 +201,8 @@ public class GeneralConfig {
 		GENERAL.opsTracing.set(opsTracing);
 		GENERAL.logcap.set(logcap);
 		
+		GENERAL.continueAfterStuckTick.set(continueAfterStuckTick);
+		
 		GENERAL.teWhiteList.get().clear();
 		GENERAL.teWhiteList.get().addAll(teUnfoundWhiteList);
 		GENERAL.teWhiteList.get().addAll(teWhiteList.stream().map(clz -> clz.getName()).collect(Collectors.toList()));
@@ -234,6 +240,8 @@ public class GeneralConfig {
 		
 		public final BooleanValue opsTracing;
 		public final IntValue logcap;
+		
+		public final BooleanValue continueAfterStuckTick;
 		
 		public GeneralConfigTemplate(ForgeConfigSpec.Builder builder) {
 			builder.push("general");
@@ -308,7 +316,7 @@ public class GeneralConfig {
 					.comment("Attempts to re-load timed out chunks; Seems to work")
 					.define("enableTimeoutReload", false);
 			timeoutCount = builder
-					.comment("Ammount of workless iterations to wait before declaring a chunk load attempt as timed out\n"
+					.comment("Amount of workless iterations to wait before declaring a chunk load attempt as timed out\n"
 							+"This is in ~100us itterations (plus minus yield time) so timeout >= timeoutCount*100us")
 					.defineInRange("timeoutCount", 5000, 500, 500000);
 			builder.pop();
@@ -323,6 +331,11 @@ public class GeneralConfig {
 			logcap = builder
 					.comment("Maximum time between MCMT presence alerts in 10ms steps")
 					.defineInRange("logcap", 720000, 15000, Integer.MAX_VALUE);
+			builder.pop();
+			builder.push("continueAfterStuckTick");
+			builder.comment("Allows continuation after a stuck tick. "
+					+ "This is HIGHLY unstable, so don't enable it unless you know what you're doing and have backups.");
+			continueAfterStuckTick = builder.define("continueAfterStuckTick", false);
 		}
 
 	}
