@@ -336,6 +336,7 @@ public class GeneralConfig {
 			builder.comment("Allows continuation after a stuck tick. "
 					+ "This is HIGHLY unstable, so don't enable it unless you know what you're doing and have backups.");
 			continueAfterStuckTick = builder.define("continueAfterStuckTick", false);
+			builder.pop();
 		}
 
 	}
