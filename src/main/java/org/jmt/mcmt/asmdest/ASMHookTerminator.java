@@ -116,22 +116,12 @@ public class ASMHookTerminator {
 	}
 
 	public static void preTick(MinecraftServer server) {
-		// enable phaser reuse
-//		if (phaser != null) {
-//			LOGGER.warn("Multiple servers?");
-//			return;
-//		} else {
-//			isTicking.set(true);
-//			phaser = new Phaser();
-//			phaser.register();
-//			mcServer = server;
-//			StatsCommand.setServer(mcServer);
-//		}
-		// if the phaser does not exist or is terminated, recreate it
-		if (phaser == null || phaser.isTerminated()) {
-			phaser = new Phaser();
+		if (phaser != null) {
+			LOGGER.warn("Multiple servers?");
 		}
+
 		// set up for the next tick
+		phaser = new Phaser();
 		isTicking.set(true);
 		phaser.register();
 		mcServer = server;
@@ -149,7 +139,7 @@ public class ASMHookTerminator {
 			}
 			return;
 		}
-		
+
 		if (mcServer != server) {
 			LOGGER.warn("Multiple servers?");
 			GeneralConfig.disabled = true;
@@ -337,22 +327,25 @@ public class ASMHookTerminator {
 				phaser.awaitAdvance(phaser.getPhase()); // wait for this tick to complete
 			} catch (TimeoutException e) {
 				LOGGER.error("This tick has taken longer than 1 second, investigating...");
-				LOGGER.error("Current stuck tasks:");
-				StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
-				for (String taskName : currentTasks) sj.add(taskName);
-				LOGGER.error(sj.toString());
 				
+				if (GeneralConfig.opsTracing) {
+					LOGGER.error("Current stuck tasks:");
+					StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
+					for (String taskName : currentTasks) sj.add(taskName);
+					LOGGER.error(sj.toString());
+				}
+
 				if (GeneralConfig.continueAfterStuckTick) {
 					LOGGER.fatal("CONTINUING AFTER STUCK TICK! I REALLY hope you have backups...");
 					phaser.forceTermination(); // forces termination of phaser
 				} else {
 					LOGGER.error("Continuing to wait for tick to complete... (don't hold your breath)");
 					phaser.awaitAdvance(phaser.getPhase()); // wait for this tick to complete (but if we're here, it probably won't)
+					LOGGER.info("Tick recovered, continuing...");
 				}
 			}
 			isTicking.set(false);
-			// probably faster if we just use the same phaser
-			// phaser = null;
+			phaser = null;
 		}
 	}
 
@@ -392,7 +385,7 @@ public class ASMHookTerminator {
 		LOGGER.debug("FixSTL Called");
 		stl.pendingTickListEntriesTreeSet.addAll(stl.pendingTickListEntriesHashSet);
 	}
-	
+
 	//Below is debug code for science reasons
 	/*
 	 * 	static Random debugRand = new Random();
@@ -406,6 +399,6 @@ public class ASMHookTerminator {
 		}
 	}
 	//End Debug Section
-	*/
+	 */
 }
 
