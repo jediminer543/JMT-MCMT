@@ -145,8 +145,12 @@ public class ASMHookTerminator {
 			net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 			return;
 		} else {
-			String taskName = "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
-			if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+			String taskName = null;
+			if (GeneralConfig.opsTracing) {
+				 taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
+				currentTasks.add(taskName);
+			}
+			String finalTaskName = taskName;
 			p.register();
 			ex.execute(() -> {
 				try {
@@ -174,7 +178,7 @@ public class ASMHookTerminator {
 				} finally {
 					p.arriveAndDeregister();
 					currentWorlds.decrementAndGet();
-					if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+					if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 				}
 			});
 		}
@@ -186,8 +190,12 @@ public class ASMHookTerminator {
 			entityIn.tick();
 			return;
 		}
-		String taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
-		if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+		String taskName = null;
+		if (GeneralConfig.opsTracing) {
+			taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
+			currentTasks.add(taskName);
+		}
+		String finalTaskName = taskName;
 		p.register();
 		ex.execute(() -> {
 			try {
@@ -203,7 +211,7 @@ public class ASMHookTerminator {
 			} finally {
 				currentEnts.decrementAndGet();
 				p.arriveAndDeregister();
-				if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+				if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 			}
 		});
 	}
@@ -213,8 +221,12 @@ public class ASMHookTerminator {
 			world.tickEnvironment(chunk, k);
 			return;
 		}
-		String taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
-		if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+		String taskName = null;
+		if (GeneralConfig.opsTracing) {
+			taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
+			currentTasks.add(taskName);
+		}
+		String finalTaskName = taskName;
 		p.register();
 		ex.execute(() -> {
 			try {
@@ -223,7 +235,7 @@ public class ASMHookTerminator {
 			} finally {
 				currentEnvs.decrementAndGet();
 				p.arriveAndDeregister();
-				if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+				if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 			}
 		});
 	}
@@ -251,9 +263,13 @@ public class ASMHookTerminator {
 			tte.tick();
 			return;
 		}
-		String taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
-		if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+		String taskName = null;
+		if (GeneralConfig.opsTracing) {
+			taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
+			currentTasks.add(taskName);
+		}
 		p.register();
+		String finalTaskName = taskName;
 		ex.execute(() -> {
 			try {
 				//final boolean doLock = filterTE(tte);
@@ -270,7 +286,7 @@ public class ASMHookTerminator {
 			} finally {
 				currentTEs.decrementAndGet();
 				p.arriveAndDeregister();
-				if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+				if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
 			}
 		});
 	}
