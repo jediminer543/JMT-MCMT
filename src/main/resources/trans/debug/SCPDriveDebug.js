@@ -47,10 +47,19 @@ function initializeCoreMod() {
         		
         		//Call Hook
         		var skipTarget = new LabelNode();
+
+				var cfl = 8;
+				
+				var targetVar = method.localVariables.get(cfl);
+				
+				if (!targetVar.desc.endsWith("CompletableFuture")) {
+					cfl = 9;
+					asmapi.log("WARN", "[JMTSUPERTRANS] You are using new forge!");
+				}
         		
         		var il = new InsnList();
         		il.add(new VarInsnNode(opcodes.ALOAD, 0));
-        		il.add(new VarInsnNode(opcodes.ALOAD, 8));
+        		il.add(new VarInsnNode(opcodes.ALOAD, cfl));
         		il.add(new VarInsnNode(opcodes.LLOAD, 6));
         		il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
         				"org/jmt/mcmt/asmdest/DebugHookTerminator", "chunkLoadDrive",

@@ -8,6 +8,7 @@ import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.asmdest.ASMHookTerminator;
 import org.jmt.mcmt.commands.ConfigCommand;
 import org.jmt.mcmt.config.GeneralConfig;
+import org.jmt.mcmt.serdes.SerDesRegistry;
 
 import com.mojang.brigadier.CommandDispatcher;
 
@@ -51,6 +52,7 @@ public class MCMT
         MinecraftForge.EVENT_BUS.register(this);
         
         StatsCommand.runDataThread();
+        SerDesRegistry.init();
         
         ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, GeneralConfig.GENERAL_SPEC);
     }
