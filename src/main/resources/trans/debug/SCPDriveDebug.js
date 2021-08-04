@@ -50,9 +50,19 @@ function initializeCoreMod() {
 
 				var cfl = 8;
 				
-				var targetVar = method.localVariables.get(cfl);
+				var targetVar = null;
+				for (var idx in method.localVariables) {
+            		var lv = method.localVariables[idx];
+					asmapi.log("WARN", "[JMTSUPERTRANS] " + lv.desc + ":" + lv.index);
+					if (lv.index == cfl && lv.desc.endsWith("CompletableFuture;")) {
+						asmapi.log("WARN", "[JMTSUPERTRANS] found: " + lv.desc + ":" + lv.index);
+						targetVar = lv;
+					}
+				}
 				
-				if (!targetVar.desc.endsWith("CompletableFuture")) {
+				
+				if (targetVar == null) {
+					asmapi.log("WARN", "[JMTSUPERTRANS] " + targetVar.desc);
 					cfl = 9;
 					asmapi.log("WARN", "[JMTSUPERTRANS] You are using new forge!");
 				}
