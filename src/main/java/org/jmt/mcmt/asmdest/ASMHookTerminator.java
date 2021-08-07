@@ -78,8 +78,8 @@ public class ASMHookTerminator {
 		};
 		ex = new ForkJoinPool(
 				parallelism,
-				 fjpf,
-	             null, false);
+				fjpf,
+				null, false);
 	}
 	
 	/**
@@ -147,7 +147,7 @@ public class ASMHookTerminator {
 		} else {
 			String taskName = null;
 			if (GeneralConfig.opsTracing) {
-				 taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
+				taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
 				currentTasks.add(taskName);
 			}
 			String finalTaskName = taskName;
@@ -160,14 +160,19 @@ public class ASMHookTerminator {
 						p.register();
 						ex.execute(() -> {
 							try {
-								//ForkJoinPool.managedBlock(
-								//		new RunnableManagedBlocker(() ->  { 
+								/*
+								ForkJoinPool.managedBlock(
+										new RunnableManagedBlocker(() ->  {
+								*/
 												synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
 													net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 												}
-								//		}));
-							//} catch (InterruptedException e) {
-							//	e.printStackTrace();
+
+								/*		}));
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}
+								*/
 							} finally {
 								p.arriveAndDeregister();
 							}
@@ -268,8 +273,8 @@ public class ASMHookTerminator {
 			taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
 			currentTasks.add(taskName);
 		}
-		p.register();
 		String finalTaskName = taskName;
+		p.register();
 		ex.execute(() -> {
 			try {
 				//final boolean doLock = filterTE(tte);
