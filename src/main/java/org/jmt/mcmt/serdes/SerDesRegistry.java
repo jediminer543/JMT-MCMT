@@ -1,14 +1,22 @@
 package org.jmt.mcmt.serdes;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jmt.mcmt.config.GeneralConfig;
+import org.jmt.mcmt.config.SerDesConfig;
+import org.jmt.mcmt.config.SerDesConfig.FilterConfig;
+import org.jmt.mcmt.config.SerDesConfig.PoolConfig;
+import org.jmt.mcmt.serdes.filter.GenericConfigFilter;
 import org.jmt.mcmt.serdes.filter.ISerDesFilter;
 import org.jmt.mcmt.serdes.filter.LegacyFilter;
 import org.jmt.mcmt.serdes.filter.PistonFilter;
@@ -55,6 +63,7 @@ public class SerDesRegistry {
 	private static final ISerDesFilter DEFAULT_FILTER = new DefaultFilter();
 	
 	public static void init() {
+		SerDesConfig.loadConfigs();
 		initPools();
 		initFilters();
 		initLookup();
@@ -62,10 +71,16 @@ public class SerDesRegistry {
 	
 	public static void initFilters() {
 		filters.clear();
-		//TODO make this an event
-		filters.add(new VanillaFilter());
+		// High Priority (I.e. non overridable)
 		filters.add(new PistonFilter());
-		filters.add(new LegacyFilter());
+		filters.add(new VanillaFilter());
+		filters.add(new LegacyFilter()); //TODO kill me
+		// Config loaded
+		for (FilterConfig fpc : SerDesConfig.getFilters()) {
+			ISerDesFilter filter = new GenericConfigFilter(fpc);
+			filters.add(filter);
+		}
+		// Low priority
 		filters.add(DEFAULT_FILTER);
 		for (ISerDesFilter sdf : filters) {
 			sdf.init();
@@ -120,12 +135,51 @@ public class SerDesRegistry {
 		return registry.get(name);
 	}
 	
+	public static ISerDesPool getOrCreatePool(String name, Function<String, ISerDesPool> source) {
+		return registry.computeIfAbsent(name, source);
+	}
+	
 	public static ISerDesPool getOrCreatePool(String name, Supplier<ISerDesPool> source) {
-		return registry.computeIfAbsent(name, (i) -> source.get());
+		return getOrCreatePool(name, i->{
+			ISerDesPool out = source.get();
+			out.init(i, new HashMap<String, String>());
+			return out;
+		});
 	}
 	
 	public static void initPools() {
 		registry.clear();
+		// HARDCODED DEFAULTS
+		getOrCreatePool("LEGACY", ChunkLockPool::new);
+		// LOADED FROM CONFIG
+		List<PoolConfig> pcl = SerDesConfig.getPools();
+		if (pcl != null) for (PoolConfig pc : pcl) {
+			if (!registry.containsKey(pc.getName())) {
+				try {
+					Class<?> c = Class.forName(pc.getClazz());
+					Constructor<?> init = c.getConstructor();
+					Object o = init.newInstance();
+					if (o instanceof ISerDesPool) {
+						registry.put(pc.getName(), (ISerDesPool)o);
+						((ISerDesPool)o).init(pc.getName(), pc.getInitParams());
+					}
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (NoSuchMethodException e) {
+					e.printStackTrace();
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	public static class DefaultFilter implements ISerDesFilter {

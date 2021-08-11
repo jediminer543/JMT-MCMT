@@ -15,4 +15,8 @@ public interface ISerDesPool {
 		return null;
 	}
 	
+	public default void init(String name, Map<String, String> config) {
+		
+	}
+	
 }

@@ -1,0 +1,6 @@
+[[filters]]
+priority = 10
+name = "example"
+targets.whitelist = [ "org.jmt.*" ]
+targets.blacklist = [ "org.jmt.bad.**" ]
+pools.primary.name = "LEGACY"
