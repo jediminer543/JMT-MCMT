@@ -11,6 +11,12 @@ import org.jmt.mcmt.serdes.pools.ISerDesPool;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+
+/**
+ * @author Hunter Hancock (meta1203)
+ * This, and any other code I submit to jediminer543's JMT-MCMT project, is licensed under the 2-Clause BSD License.
+ * (https://opensource.org/licenses/BSD-2-Clause)
+ */
 public class AutoFilter implements ISerDesFilter {
 	private static AutoFilter SINGLETON;
 	
@@ -39,7 +45,7 @@ public class AutoFilter implements ISerDesFilter {
 
 	@Override
 	public ClassMode getModeOnline(Class<?> c) {
-		return ClassMode.BLACKLIST;
+		return ClassMode.UNKNOWN;
 	}
 	
 	public void addClassToBlacklist(Class<?> c) {
