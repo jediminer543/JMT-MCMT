@@ -29,8 +29,8 @@ public class GenericConfigFilter implements ISerDesFilter {
 	// Target lists
 	Set<Class<?>> whitelist;
 	Set<Class<?>> blacklist;
-	List<String>   wcWhitelist;
-	List<String>   wcBlacklist;
+	List<String>  wcWhitelist;
+	List<String>  wcBlacklist;
 	
 	// PatternMatchers
 	Pattern regexWhitelist;

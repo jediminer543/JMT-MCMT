@@ -46,6 +46,18 @@ public class SerDesConfig {
 	 *
 	 */
 	public static class FilterConfig {
+		public FilterConfig() {}
+		
+		public FilterConfig(int priority, String name, List<String> whitelist, List<String> blacklist, String pool,
+				Map<String, String> poolParams) {
+			this.priority = priority;
+			this.name = name;
+			this.whitelist = whitelist;
+			this.blacklist = blacklist;
+			this.pool = pool;
+			this.poolParams = poolParams;
+		}
+
 		@Path("priority")
 		@SpecIntInRange(min = 0, max = Integer.MAX_VALUE)
 		int priority;
@@ -220,5 +232,13 @@ public class SerDesConfig {
 	
 	public static void saveConfigs() {
 		//TODO
+		
+	}
+	
+	public static void createFilterConfig(String name, Integer priority, List<String> whitelist, List<String> blacklist, String pool) {
+		FilterConfig fc = new FilterConfig(priority, name, whitelist, blacklist, pool == null ? "" : pool, null);
+		FileConfig config = FileConfig.builder(FMLPaths.CONFIGDIR.get().resolve("mcmt-serdes").resolve(name)).build();
+		config.set("filters", fc);
+		config.save();
 	}
 }
