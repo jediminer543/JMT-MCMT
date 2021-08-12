@@ -19,6 +19,7 @@ import com.electronwill.nightconfig.core.conversion.SpecValidator;
 import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.file.NoFormatFoundException;
 import com.google.common.base.Predicates;
+import com.google.common.collect.Maps;
 
 import net.minecraftforge.fml.loading.FMLPaths;
 
@@ -138,16 +139,20 @@ public class SerDesConfig {
 	}
 	
 	private static final class ClassListValidator implements Predicate<Object> {
-		String validatorRegex = "^[a-z]+(\\.[a-z0-9]+)*((\\.[A-Z][a-z0-9]+($[A-Za-z0-9]+)*)|\\.\\*|\\.\\*\\*)$";
+		String validatorRegex = "^[a-z]+(\\.[a-z0-9]+)*((\\.[A-Z][A-Za-z0-9]+($[A-Za-z0-9]+)*)|\\.\\*|\\.\\*\\*)$";
 		@Override
 		public boolean test(Object t) {
 			if (t == null) {
 				return true;
 			}
+			
 			if (t instanceof List<?>) {
 				List<?> list = (List<?>) t;
 				for (Object s : list) {
 					if (!(s instanceof String && ((String)s).matches(validatorRegex))) {
+//						System.out.println("Value: " + t.toString() + " | String: " + (s instanceof String) + " | Matches: " +
+//								(s instanceof String ? ((String)s).matches(validatorRegex) : "invalid"));
+						
 						return false;
 					}
 				}
@@ -236,9 +241,13 @@ public class SerDesConfig {
 	}
 	
 	public static void createFilterConfig(String name, Integer priority, List<String> whitelist, List<String> blacklist, String pool) {
-		FilterConfig fc = new FilterConfig(priority, name, whitelist, blacklist, pool == null ? "" : pool, null);
-		FileConfig config = FileConfig.builder(FMLPaths.CONFIGDIR.get().resolve("mcmt-serdes").resolve(name)).build();
-		config.set("filters", fc);
+		java.nio.file.Path saveTo = FMLPaths.CONFIGDIR.get().resolve("mcmt-serdes").resolve(name + ".toml");
+		FilterConfig fc = new FilterConfig(priority, name, whitelist, blacklist, pool == null ? "LEGACY" : pool, Maps.newHashMap());
+		FileConfig config = FileConfig.builder(saveTo).build();
+		ObjectConverter oc = new ObjectConverter();
+		config.set("filters", oc.toConfig(fc, Config::inMemory));
+		System.out.println("Saving config to " + saveTo.toString() + " ...");
 		config.save();
+		config.close();
 	}
 }

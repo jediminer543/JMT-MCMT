@@ -260,7 +260,7 @@ public class SerDesRegistry {
 					LOGGER.error("Exception running " + obj.getClass().getName() + " asynchronusly", e);
 					LOGGER.error("Adding " + obj.getClass().getName() + " to blacklist.");
 					SerDesConfig.createFilterConfig(
-							"auto" + obj.getClass().getName().replaceAll("\\.", ""),
+							"auto-" + obj.getClass().getName(),
 							10,
 							Lists.newArrayList(),
 							Lists.newArrayList(obj.getClass().getName()),
