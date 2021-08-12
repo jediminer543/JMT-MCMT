@@ -249,7 +249,6 @@ public class SerDesConfig {
 		FilterConfig fc = new FilterConfig(priority, name, whitelist, blacklist, pool == null ? "LEGACY" : pool, Config.inMemory());
 		FileConfig config = FileConfig.builder(saveTo).build();
 		config.set("filters", Lists.newArrayList(OBJECT_CONVERTER.toConfig(fc, Config::inMemoryUniversal)));
-		config.remove("filters.pools.primary.params"); // get rid of some HashMap grossness
 		System.out.println("Saving config to " + saveTo.toString() + " ...");
 		config.save();
 		config.close();
