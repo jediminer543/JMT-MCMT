@@ -4,9 +4,9 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.asmdest.ASMHookTerminator;
 import org.jmt.mcmt.commands.ConfigCommand;
+import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.serdes.SerDesRegistry;
 
@@ -16,6 +16,9 @@ import net.minecraft.block.Block;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.EntityType;
 import net.minecraftforge.common.MinecraftForge;
+/* 1.16.1 code; AKA the only thing that changed  */
+import net.minecraftforge.event.RegisterCommandsEvent;
+/* */
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -25,10 +28,6 @@ import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-
-/* 1.16.1 code; AKA the only thing that changed  */
-import net.minecraftforge.event.RegisterCommandsEvent;
-/* */
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod("jmt_mcmt")

@@ -24,7 +24,7 @@ public class PistonFilter implements ISerDesFilter {
 	public void init() {
 		//TODO Figure out if piston specific chunklock can be used (or just move to using the 
 		clp = SerDesRegistry.getOrCreatePool("LEGACY", ChunkLockPool::new);
-		Map<String, String> cfg = new HashMap<>();
+		Map<String, Object> cfg = new HashMap<>();
 		cfg.put("range", "1");
 		config = clp.compileOptions(cfg);
 	}

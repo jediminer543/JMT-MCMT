@@ -12,10 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.config.SerDesConfig;
 import org.jmt.mcmt.config.SerDesConfig.FilterConfig;
 import org.jmt.mcmt.config.SerDesConfig.PoolConfig;
+import org.jmt.mcmt.serdes.filter.AutoFilter;
 import org.jmt.mcmt.serdes.filter.GenericConfigFilter;
 import org.jmt.mcmt.serdes.filter.ISerDesFilter;
 import org.jmt.mcmt.serdes.filter.LegacyFilter;
@@ -24,6 +27,8 @@ import org.jmt.mcmt.serdes.filter.VanillaFilter;
 import org.jmt.mcmt.serdes.pools.ChunkLockPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool.ISerDesOptions;
+
+import com.google.common.collect.Lists;
 
 import net.minecraft.tileentity.PistonTileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -36,7 +41,7 @@ import net.minecraft.world.World;
  *
  */
 public class SerDesRegistry {
-
+	private static final Logger LOGGER = LogManager.getLogger(); 
 	private static final Map<Class<?>, ISerDesFilter> EMPTYMAP = new ConcurrentHashMap<Class<?>, ISerDesFilter>();
 	private static final Set<Class<?>> EMPTYSET = ConcurrentHashMap.newKeySet();
 	
@@ -81,6 +86,7 @@ public class SerDesRegistry {
 			filters.add(filter);
 		}
 		// Low priority
+		filters.add(AutoFilter.singleton());
 		filters.add(DEFAULT_FILTER);
 		for (ISerDesFilter sdf : filters) {
 			sdf.init();
@@ -142,9 +148,13 @@ public class SerDesRegistry {
 	public static ISerDesPool getOrCreatePool(String name, Supplier<ISerDesPool> source) {
 		return getOrCreatePool(name, i->{
 			ISerDesPool out = source.get();
-			out.init(i, new HashMap<String, String>());
+			out.init(i, new HashMap<String, Object>());
 			return out;
 		});
+	}
+	
+	public static boolean removeFromWhitelist(ISerDesHookType isdh, Class<?> c) {
+		return whitelist.getOrDefault(isdh, EMPTYSET).remove(c);
 	}
 	
 	public static void initPools() {
@@ -209,7 +219,7 @@ public class SerDesRegistry {
 		@Override
 		public void init() {
 			clp = SerDesRegistry.getOrCreatePool("LEGACY", ChunkLockPool::new);
-			Map<String, String> cfg = new HashMap<>();
+			Map<String, Object> cfg = new HashMap<>();
 			cfg.put("range", "1");
 			config = clp.compileOptions(cfg);
 		}
@@ -244,7 +254,23 @@ public class SerDesRegistry {
 			if (hookType.equals(SerDesHookTypes.TETick) && filterTE(obj)) {
 				clp.serialise(task, obj, bp, w, config);
 			} else {
-				task.run();
+				try {
+					task.run();
+				} catch (Exception e) {
+					LOGGER.error("Exception running " + obj.getClass().getName() + " asynchronusly", e);
+					LOGGER.error("Adding " + obj.getClass().getName() + " to blacklist.");
+					SerDesConfig.createFilterConfig(
+							"auto-" + obj.getClass().getName(),
+							10,
+							Lists.newArrayList(),
+							Lists.newArrayList(obj.getClass().getName()),
+							null
+						);
+					
+					AutoFilter.singleton().addClassToBlacklist(obj.getClass());
+					// TODO: this could leave a tick in an incomplete state. should the full exception be thrown?
+					if (e instanceof RuntimeException) throw e;
+				}
 			}
 		}
 		
