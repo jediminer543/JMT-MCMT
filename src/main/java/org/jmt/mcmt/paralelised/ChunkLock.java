@@ -12,18 +12,19 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 
 public class ChunkLock {
-
-	static Map<Long, Lock> chunkLockCache = new ConcurrentHashMap<>();
 	
-	static {
-		//TODO Add cleanup thread
-	}
+	@Deprecated
+	public static final ChunkLock INSTANCE = new ChunkLock(); 
 	
-	public static void cleanup() {
+	Map<Long, Lock> chunkLockCache = new ConcurrentHashMap<>();
+	
+	//TODO Add cleanup thread
+	
+	public void cleanup() {
 		chunkLockCache = new ConcurrentHashMap<>();
 	}
 	
-	public static long[] lock(BlockPos bp, int radius) {
+	public long[] lock(BlockPos bp, int radius) {
 		long cp = new ChunkPos(bp).asLong();
 		long[] targets = new long[(1+radius*2)*(1+radius*2)];
 		int pos = 0;
@@ -40,7 +41,7 @@ public class ChunkLock {
 		return targets;
 	}
 	
-	public static void unlock(long[] locks) {
+	public void unlock(long[] locks) {
 		ArrayUtils.reverse(locks);
 		for (long l : locks) {
 			chunkLockCache.get(l).unlock();

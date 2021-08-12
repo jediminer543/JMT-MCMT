@@ -139,7 +139,6 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 		return out;
 	}
 
-	@SuppressWarnings("deprecation")
 	public int removeFirstInt() {
 		Integer out = this.remove(backing.keySet().stream().findAny().get());
 		if (out == null) {
@@ -148,7 +147,6 @@ public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMa
 		return out;
 	}
 
-	@SuppressWarnings("deprecation")
 	public int removeLastInt() {
 		Integer out = this.remove(backing.keySet().stream().findAny().get());
 		if (out == null) {
