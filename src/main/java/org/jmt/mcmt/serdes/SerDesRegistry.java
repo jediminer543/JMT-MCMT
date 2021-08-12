@@ -148,7 +148,7 @@ public class SerDesRegistry {
 	public static ISerDesPool getOrCreatePool(String name, Supplier<ISerDesPool> source) {
 		return getOrCreatePool(name, i->{
 			ISerDesPool out = source.get();
-			out.init(i, new HashMap<String, String>());
+			out.init(i, new HashMap<String, Object>());
 			return out;
 		});
 	}
@@ -219,7 +219,7 @@ public class SerDesRegistry {
 		@Override
 		public void init() {
 			clp = SerDesRegistry.getOrCreatePool("LEGACY", ChunkLockPool::new);
-			Map<String, String> cfg = new HashMap<>();
+			Map<String, Object> cfg = new HashMap<>();
 			cfg.put("range", "1");
 			config = clp.compileOptions(cfg);
 		}

@@ -22,7 +22,7 @@ public class LegacyFilter implements ISerDesFilter {
 	@Override
 	public void init() {
 		clp = SerDesRegistry.getOrCreatePool("LEGACY", ChunkLockPool::new);
-		Map<String, String> cfg = new HashMap<>();
+		Map<String, Object> cfg = new HashMap<>();
 		cfg.put("range", "1");
 		config = clp.compileOptions(cfg);
 	}

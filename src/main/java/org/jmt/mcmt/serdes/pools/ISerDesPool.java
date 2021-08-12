@@ -13,11 +13,11 @@ public interface ISerDesPool {
 	
 	public void serialise(Runnable task, Object o, BlockPos bp, World w, @Nullable ISerDesOptions options);
 	
-	public default ISerDesOptions compileOptions(Map<String, String> config) {
+	public default ISerDesOptions compileOptions(Map<String, Object> config) {
 		return null;
 	}
 	
-	public default void init(String name, Map<String, String> config) {
+	public default void init(String name, Map<String, Object> config) {
 		
 	}
 	

@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.conversion.ObjectConverter;
 import com.electronwill.nightconfig.core.conversion.Path;
@@ -19,7 +21,7 @@ import com.electronwill.nightconfig.core.conversion.SpecValidator;
 import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.file.NoFormatFoundException;
 import com.google.common.base.Predicates;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
 
 import net.minecraftforge.fml.loading.FMLPaths;
 
@@ -46,11 +48,14 @@ public class SerDesConfig {
 	 * @author jediminer543
 	 *
 	 */
+	
+	private static final ObjectConverter OBJECT_CONVERTER = new ObjectConverter();
+	
 	public static class FilterConfig {
 		public FilterConfig() {}
 		
 		public FilterConfig(int priority, String name, List<String> whitelist, List<String> blacklist, String pool,
-				Map<String, String> poolParams) {
+				Config poolParams) {
 			this.priority = priority;
 			this.name = name;
 			this.whitelist = whitelist;
@@ -80,7 +85,7 @@ public class SerDesConfig {
 		
 		@Path("pools.primary.params")
 		//@SpecNotNull
-		Map<String, String> poolParams;
+		Config poolParams; // nightconfig does not support Maps, use Configs instead
 
 		public int getPriority() {
 			return priority;
@@ -98,8 +103,8 @@ public class SerDesConfig {
 			return pool;
 		}
 
-		public Map<String, String> getPoolParams() {
-			return poolParams;
+		public Map<String, Object> getPoolParams() {
+			return poolParams.valueMap();
 		}
 	}
 	
@@ -114,7 +119,7 @@ public class SerDesConfig {
 		
 		@Path("params")
 		@SpecNotNull
-		Map<String, String> initParams;
+		Config initParams;
 		
 		@Path("priority")
 		@SpecIntInRange(min = Integer.MIN_VALUE, max = Integer.MAX_VALUE)
@@ -128,8 +133,8 @@ public class SerDesConfig {
 			return name;
 		}
 
-		public Map<String, String> getInitParams() {
-			return initParams;
+		public Map<String, Object> getInitParams() {
+			return initParams.valueMap();
 		}
 
 		public int getPriority() {
@@ -211,12 +216,11 @@ public class SerDesConfig {
 		List<Config> filter = fc.get("filters");
 		if (pool == null) pool = new ArrayList<Config>();
 		if (filter == null) filter = new ArrayList<Config>();
-		ObjectConverter oc = new ObjectConverter();
 		filters.put(file, filter.stream()
-				.map(c->oc.toObject(c, FilterConfig::new))
+				.map(c->OBJECT_CONVERTER.toObject(c, FilterConfig::new))
 				.collect(Collectors.toList()));
 		pools.put(file, pool.stream()
-				.map(c->oc.toObject(c, PoolConfig::new))
+				.map(c->OBJECT_CONVERTER.toObject(c, PoolConfig::new))
 				.collect(Collectors.toList()));
 		configs.put(file, fc);
 	}
@@ -240,12 +244,12 @@ public class SerDesConfig {
 		
 	}
 	
-	public static void createFilterConfig(String name, Integer priority, List<String> whitelist, List<String> blacklist, String pool) {
+	public static void createFilterConfig(String name, Integer priority, List<String> whitelist, List<String> blacklist, @Nullable String pool) {
 		java.nio.file.Path saveTo = FMLPaths.CONFIGDIR.get().resolve("mcmt-serdes").resolve(name + ".toml");
-		FilterConfig fc = new FilterConfig(priority, name, whitelist, blacklist, pool == null ? "LEGACY" : pool, Maps.newHashMap());
+		FilterConfig fc = new FilterConfig(priority, name, whitelist, blacklist, pool == null ? "LEGACY" : pool, Config.inMemory());
 		FileConfig config = FileConfig.builder(saveTo).build();
-		ObjectConverter oc = new ObjectConverter();
-		config.set("filters", oc.toConfig(fc, Config::inMemory));
+		config.set("filters", Lists.newArrayList(OBJECT_CONVERTER.toConfig(fc, Config::inMemoryUniversal)));
+		config.remove("filters.pools.primary.params"); // get rid of some HashMap grossness
 		System.out.println("Saving config to " + saveTo.toString() + " ...");
 		config.save();
 		config.close();
