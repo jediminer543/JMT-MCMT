@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.jmt.mcmt.serdes.ISerDesHookType;
 import org.jmt.mcmt.serdes.SerDesRegistry;
@@ -30,8 +31,9 @@ public class PistonFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType) {
-		clp.serialise(task, obj, bp, w, config);
+	public void serialise(Runnable task, Object obj, BlockPos bp, World w, 
+			Consumer<Runnable> executeMultithreaded, ISerDesHookType hookType) {
+		clp.serialise(task, obj, bp, w, executeMultithreaded, config);
 	}
 	
 	@Override

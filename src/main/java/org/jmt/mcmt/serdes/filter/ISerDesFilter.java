@@ -1,6 +1,7 @@
 package org.jmt.mcmt.serdes.filter;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -12,7 +13,8 @@ import net.minecraft.world.World;
 
 public interface ISerDesFilter {
 
-	public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType);
+	public void serialise(Runnable task, Object obj, BlockPos bp, World w, 
+			Consumer<Runnable> executeMultithreaded, ISerDesHookType hookType);
 	
 	@Nullable
 	public default Set<Class<?>> getTargets() {
@@ -35,7 +37,7 @@ public interface ISerDesFilter {
 	}
 	
 	public static enum ClassMode {
-		BLACKLIST,
+		CHUNKLOCK,
 		WHITELIST,
 		UNKNOWN;
 	}

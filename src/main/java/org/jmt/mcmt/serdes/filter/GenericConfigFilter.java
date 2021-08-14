@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import org.jmt.mcmt.config.SerDesConfig;
@@ -84,7 +85,7 @@ public class GenericConfigFilter implements ISerDesFilter {
 	public ClassMode getModeOnline(Class<?> c) {
 		if (regexBlacklist != null) {
 			if (regexBlacklist.matcher(c.getName()).find()) {
-				return ClassMode.BLACKLIST;
+				return ClassMode.CHUNKLOCK;
 			}
 		}
 		if (regexWhitelist != null) {
@@ -96,8 +97,9 @@ public class GenericConfigFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType) {
-		primePool.serialise(task, hookType, bp, w, primeOpts);
+	public void serialise(Runnable task, Object obj, BlockPos bp, World w,
+			Consumer<Runnable> executeMultithreaded, ISerDesHookType hookType) {
+		primePool.serialise(task, hookType, bp, w, executeMultithreaded, primeOpts);
 	}
 
 }

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -225,7 +226,8 @@ public class SerDesRegistry {
 		}
 		
 		@Override
-		public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType) {
+		public void serialise(Runnable task, Object obj, BlockPos bp, World w, 
+				Consumer<Runnable> multi, ISerDesHookType hookType) {
 			if (!unknown.contains(obj.getClass())) {
 				ClassMode mode = ClassMode.UNKNOWN;
 				for (ISerDesFilter isdf : filters) {
@@ -233,11 +235,11 @@ public class SerDesRegistry {
 					if (cm.compareTo(mode) < 0) {
 						mode = cm;
 					}
-					if (mode == ClassMode.BLACKLIST) {
+					if (mode == ClassMode.CHUNKLOCK) {
 						optimisedLookup.computeIfAbsent(hookType, 
 								i->new ConcurrentHashMap<Class<?>, ISerDesFilter>())
 								.put(obj.getClass(), isdf);
-						isdf.serialise(task, obj, bp, w, hookType);
+						isdf.serialise(task, obj, bp, w, multi, hookType);
 						return;
 					}
 				}
@@ -245,14 +247,14 @@ public class SerDesRegistry {
 					whitelist.computeIfAbsent(hookType, 
 							k->ConcurrentHashMap.newKeySet())
 						.add(obj.getClass());
-					task.run(); // Whitelist = run on thread
+					multi.accept(task); // Whitelist = run on thread
 					return;
 				}
 				unknown.add(obj.getClass());
 			}
 			// TODO legacy behaviour please fix
 			if (hookType.equals(SerDesHookTypes.TETick) && filterTE(obj)) {
-				clp.serialise(task, obj, bp, w, config);
+				clp.serialise(task, obj, bp, w, multi, config);
 			} else {
 				try {
 					task.run();
@@ -273,7 +275,5 @@ public class SerDesRegistry {
 				}
 			}
 		}
-		
-		
 	}
 }

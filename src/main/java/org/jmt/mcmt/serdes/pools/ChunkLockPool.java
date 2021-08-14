@@ -1,5 +1,7 @@
 package org.jmt.mcmt.serdes.pools;
 
+import java.util.function.Consumer;
+
 import javax.annotation.Nullable;
 
 import org.jmt.mcmt.paralelised.ChunkLock;
@@ -22,14 +24,15 @@ public class ChunkLockPool implements ISerDesPool {
 	}
 	
 	@Override
-	public void serialise(Runnable task, Object o, BlockPos bp, World w, @Nullable ISerDesOptions options) {
+	public void serialise(Runnable task, Object o, BlockPos bp, World w, 
+			Consumer<Runnable> executeMultithreaded, @Nullable ISerDesOptions options) {
 		int range = 1;
 		if (options instanceof CLPOptions) {
 			range = ((CLPOptions) options).getRange();
 		}
 		long[] locks = cl.lock(bp, range);
 		try {
-			task.run();
+			executeMultithreaded.accept(task);
 		} finally {
 			cl.unlock(locks);
 		}

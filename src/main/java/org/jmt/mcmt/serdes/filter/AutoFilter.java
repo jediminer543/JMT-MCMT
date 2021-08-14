@@ -2,6 +2,7 @@ package org.jmt.mcmt.serdes.filter;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import org.jmt.mcmt.serdes.ISerDesHookType;
 import org.jmt.mcmt.serdes.SerDesRegistry;
@@ -34,8 +35,9 @@ public class AutoFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType) {
-		pool.serialise(task, obj, bp, w, null);
+	public void serialise(Runnable task, Object obj, BlockPos bp, World w, 
+			Consumer<Runnable> multi, ISerDesHookType hookType) {
+		pool.serialise(task, obj, bp, w, multi, null);
 	}
 
 	@Override

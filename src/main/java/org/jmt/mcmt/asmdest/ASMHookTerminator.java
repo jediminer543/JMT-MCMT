@@ -1,9 +1,12 @@
 package org.jmt.mcmt.asmdest;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
@@ -63,12 +66,12 @@ public class ASMHookTerminator {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	//	static Phaser phaser;
-	static ConcurrentHashMap<String, CompletableFuture<Void>> executionStack = new ConcurrentHashMap<>();
-	static ExecutorService exec;
+	public static ConcurrentHashMap<String, Runnable> worldExecutionStack = new ConcurrentHashMap<>();
+	public static ConcurrentHashMap<String, Runnable> entityExecutionStack = new ConcurrentHashMap<>();
+	public static ExecutorService exec;
 	static MinecraftServer mcServer;
 	static AtomicBoolean isTicking = new AtomicBoolean();
 	static AtomicInteger threadID = new AtomicInteger();
-
 
 	public static void setupThreadpool(int parallelism) {
 		threadID = new AtomicInteger();
@@ -97,13 +100,6 @@ public class ASMHookTerminator {
 
 	static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
 
-	// Statistics
-	public static AtomicInteger currentWorlds = new AtomicInteger();
-	public static AtomicInteger currentEnts = new AtomicInteger();
-	public static AtomicInteger currentTEs = new AtomicInteger();
-	public static AtomicInteger currentEnvs = new AtomicInteger();
-
-
 	public static void regThread(String poolName, Thread thread) {
 		mcThreadTracker.computeIfAbsent(poolName, s -> ConcurrentHashMap.newKeySet()).add(thread);
 	}
@@ -117,58 +113,75 @@ public class ASMHookTerminator {
 	}
 
 	// create a CompletableFuture, run it, and add it to the execution stack
-	private static void execute(String taskName, Runnable task) {
-		// ensure there is no accidental key collision
-		while (executionStack.containsKey(taskName)) taskName = taskName + "+";
-		String finalTaskName = taskName;
-		// add a CompletableFuture to the execution stack that runs the given task, then removes itself when done
-		executionStack.put(finalTaskName, CompletableFuture.runAsync(task, exec).thenRun(() -> {executionStack.remove(finalTaskName);}));
+	private static void execute(String taskName, Runnable task, ConcurrentHashMap<String, Runnable> stack) {
+		synchronized (stack) {
+			// ensure there is no accidental key collision
+			while (stack.containsKey(taskName)) taskName = taskName + "+";
+			String finalTaskName = taskName;
+			// add a CompletableFuture to the execution stack that runs the given task
+			stack.put(finalTaskName, task);
+		}
 	}
 
-	private static void awaitCompletion() {
-		Instant before = Instant.now();
-		// convert all outstanding ticks to one CompletableFuture to wait on
-		CompletableFuture<Void> allTicks = CompletableFuture.allOf(executionStack.values().toArray(new CompletableFuture[executionStack.size()]));
-		try {
-			// wait on all executing ticks for up to 1 second (20 ticks)
-			allTicks.get(1, TimeUnit.SECONDS);
-			LOGGER.info(executionStack.size());
-		} catch (TimeoutException e) {
-			LOGGER.error("This tick has taken longer than 1 second, investigating...");
-			LOGGER.error("Current stuck tasks:");
-			StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
-			for (String taskName : executionStack.keySet()) sj.add(taskName);
-			LOGGER.error(sj.toString());
-
-			if (GeneralConfig.continueAfterStuckTick) {
-				LOGGER.fatal("CONTINUING AFTER STUCK TICK! I REALLY hope you have backups...");
-				allTicks.cancel(true); // cancel combined CompletableFuture
-				executionStack.clear(); // empty the execution stack for another go-around
-			} else {
-				LOGGER.error("Continuing to wait for tick to complete... (don't hold your breath)");
-				try {
-					allTicks.get(); // wait for this tick to complete (but if we're here, it probably won't)
-				} catch (InterruptedException | ExecutionException e1) {
-					LOGGER.fatal("Failed to wait for tick: ", e1);
-				} 
+	private synchronized static void awaitCompletion(ConcurrentHashMap<String, Runnable> waitOn) {
+		synchronized (waitOn) {
+			if (waitOn.size() == 0) return; // avoid hefty operations if we don't need them
+			if (GeneralConfig.opsTracing) LOGGER.info("Awaiting " + waitOn.size() + " tasks...");
+			Instant before = Instant.now();
+			// execute every queued tick
+			List<CompletableFuture<Void>> allTasks = new ArrayList<>(waitOn.size());
+			for (Entry<String, Runnable> x : waitOn.entrySet()) {
+				allTasks.add(CompletableFuture.runAsync(x.getValue(), exec));
+				if (GeneralConfig.opsTracing) LOGGER.info(x.getKey());
 			}
-		} catch (ExecutionException | InterruptedException e) {
-			LOGGER.fatal("Tick execution failed: ", e);
-			allTicks.cancel(true);
-			executionStack.clear(); // clear execution stack without prompt, we're in uncharted waters anyways
-		}
+			// convert all outstanding ticks to one CompletableFuture to wait on
+			CompletableFuture<Void> tickSum = CompletableFuture.allOf(allTasks.toArray(new CompletableFuture[allTasks.size()]));
+			try {
+				// wait on all executing ticks for up to 1 second (20 ticks)
+				tickSum.get(1, TimeUnit.SECONDS);
+				waitOn.clear();
+				if (allTasks.size() > 0) LOGGER.info(waitOn.size());
+			} catch (TimeoutException e) {
+				LOGGER.error("This tick has taken longer than 1 second, investigating...");
+				LOGGER.error("Tick status: " + (tickSum.isDone() ? "done" : "not done"));
+				LOGGER.error("Queue size: " + allTasks.size());
+				LOGGER.error("Current stuck tasks:");
+				StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
+				for (String taskName : waitOn.keySet()) sj.add(taskName);
+				LOGGER.error(sj.toString());
 
-		// debug data for how long the tick took
-		LOGGER.info("This tick took " + Instant.now().minusMillis(before.toEpochMilli()).toEpochMilli() + " ms.");
+				if (GeneralConfig.continueAfterStuckTick) {
+					LOGGER.fatal("CONTINUING AFTER STUCK TICK! I REALLY hope you have backups...");
+					tickSum.cancel(true); // cancel combined CompletableFuture
+					waitOn.clear(); // empty the execution stack for another go-around
+				} else {
+					LOGGER.error("Continuing to wait for tick to complete... (don't hold your breath)");
+					try {
+						tickSum.get(); // wait for this tick to complete (but if we're here, it probably won't)
+						waitOn.clear();
+					} catch (InterruptedException | ExecutionException e1) {
+						LOGGER.fatal("Failed to wait for tick: ", e1);
+					} 
+				}
+			} catch (ExecutionException | InterruptedException e) {
+				LOGGER.fatal("Tick execution failed: ", e);
+				tickSum.cancel(true);
+				waitOn.clear(); // clear execution stack without prompt, we're in uncharted waters anyways
+			}
 
-		if (executionStack.size() > 0) {
-			LOGGER.fatal("Execution stack was not empty before continuing to next tick! " + executionStack.size());
-			
-			StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
-			for (String taskName : executionStack.keySet()) sj.add(taskName);
-			LOGGER.fatal(sj.toString());
-			
-			executionStack.clear();
+			// debug data for how long the tick took
+			if (GeneralConfig.opsTracing)
+				LOGGER.info("This tick took " + Instant.now().minusMillis(before.toEpochMilli()).toEpochMilli() + " ms.");
+
+			if (waitOn.size() > 0) {
+				LOGGER.fatal("Execution stack was not empty before continuing to next tick! " + waitOn.size());
+
+				StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
+				for (String taskName : waitOn.keySet()) sj.add(taskName);
+				LOGGER.fatal(sj.toString());
+
+				waitOn.clear();
+			}
 		}
 	}
 
@@ -199,27 +212,22 @@ public class ASMHookTerminator {
 		} else {
 			String taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
 			execute(taskName, () -> {
-				try {
-					currentWorlds.incrementAndGet();
-					serverworld.tick(hasTimeLeft);
-					if (!GeneralConfig.disableWorldPostTick) {
-						exec.execute(() -> {
-							//ForkJoinPool.managedBlock(
-							//		new RunnableManagedBlocker(() ->  { 
-							synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
-								net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-							}
-							//		}));
-							//} catch (InterruptedException e) {
-							//	e.printStackTrace();
-						});
-					} else {
-						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-					}
-				} finally {
-					currentWorlds.decrementAndGet();
+				serverworld.tick(hasTimeLeft);
+				if (!GeneralConfig.disableWorldPostTick) {
+					exec.execute(() -> {
+						//ForkJoinPool.managedBlock(
+						//		new RunnableManagedBlocker(() ->  { 
+						synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
+							net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+						}
+						//		}));
+						//} catch (InterruptedException e) {
+						//	e.printStackTrace();
+					});
+				} else {
+					net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 				}
-			});
+			}, worldExecutionStack);
 		}
 	}
 
@@ -229,21 +237,18 @@ public class ASMHookTerminator {
 			return;
 		}
 		String taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
-		execute(taskName, () -> {
-			try {
-				//currentEnts.incrementAndGet();
-				//entityIn.tick();
-				final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
-				currentTEs.incrementAndGet();
-				if (filter != null) {
-					filter.serialise(entityIn::tick, entityIn, entityIn.getPosition(), serverworld, SerDesHookTypes.EntityTick);
-				} else {
-					entityIn.tick();
-				}
-			} finally {
-				currentEnts.decrementAndGet();
-			}
-		});
+
+		final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
+		if (filter != null) {
+			awaitCompletion(worldExecutionStack); // force world ticks to complete first
+			filter.serialise(entityIn::tick, entityIn, entityIn.getPosition(), serverworld, task -> {
+				execute(taskName, task, entityExecutionStack);
+			}, SerDesHookTypes.EntityTick);
+		} else {
+			execute(taskName, () -> {
+				entityIn.tick();
+			}, entityExecutionStack);
+		}
 	}
 
 	public static void callTickEnvironment(ServerWorld world, Chunk chunk, int k, ServerChunkProvider scp) {
@@ -253,13 +258,8 @@ public class ASMHookTerminator {
 		}
 		String taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
 		execute(taskName, () -> {
-			try {
-				currentEnvs.incrementAndGet();
-				world.tickEnvironment(chunk, k);
-			} finally {
-				currentEnvs.decrementAndGet();
-			}
-		});
+			world.tickEnvironment(chunk, k);
+		}, worldExecutionStack);
 	}
 
 	public static boolean filterTickableEntity(ITickableTileEntity tte) {
@@ -285,25 +285,23 @@ public class ASMHookTerminator {
 			tte.tick();
 			return;
 		}
-		String taskName = null;
-		taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
-		execute(taskName, () -> {
-			try {
-				//final boolean doLock = filterTE(tte);
-				final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
-				currentTEs.incrementAndGet();
-				if (filter != null) {
-					filter.serialise(tte::tick, tte, ((TileEntity)tte).getPos(), world, SerDesHookTypes.TETick);
-				} else {
+		String taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
+		final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
+		if (filter != null) {
+			awaitCompletion(worldExecutionStack); // force world ticks to complete first
+			filter.serialise(tte::tick, tte, ((TileEntity)tte).getPos(), world, (task) -> {
+				execute(taskName, task, entityExecutionStack);
+			}, SerDesHookTypes.TETick);
+		} else {
+			execute(taskName, () -> {
+				try {
 					tte.tick();
+				} catch (Exception e) {
+					System.err.println("Exception ticking TE at " + ((TileEntity) tte).getPos());
+					e.printStackTrace();
 				}
-			} catch (Exception e) {
-				System.err.println("Exception ticking TE at " + ((TileEntity) tte).getPos());
-				e.printStackTrace();
-			} finally {
-				currentTEs.decrementAndGet();
-			}
-		});
+			}, entityExecutionStack);
+		}
 	}
 
 	public static void sendQueuedBlockEvents(Deque<BlockEventData> d, ServerWorld sw) {
@@ -330,7 +328,8 @@ public class ASMHookTerminator {
 			LOGGER.warn("Multiple servers?");
 			return;
 		} else {
-			awaitCompletion();
+			awaitCompletion(worldExecutionStack); // this should be empty, but run it just in case
+			awaitCompletion(entityExecutionStack);
 		}
 	}
 
@@ -354,7 +353,7 @@ public class ASMHookTerminator {
 		//TODO expand on TE settings
 		if (GeneralConfig.opsTracing) {
 			confInfo.append("\t\t"); confInfo.append("-- Running Operations Begin -- "); confInfo.append("\n");
-			for (String s : executionStack.keySet()) {
+			for (String s : entityExecutionStack.keySet()) {
 				confInfo.append("\t\t"); confInfo.append("\t"); confInfo.append(s); confInfo.append("\n");
 			}
 			confInfo.append("\t\t"); confInfo.append("-- Running Operations End -- "); confInfo.append("\n");
