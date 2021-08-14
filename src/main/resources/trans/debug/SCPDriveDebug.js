@@ -62,7 +62,7 @@ function initializeCoreMod() {
 				
 				
 				if (targetVar == null) {
-					asmapi.log("WARN", "[JMTSUPERTRANS] " + targetVar.desc);
+					//asmapi.log("WARN", "[JMTSUPERTRANS] );
 					cfl = 9;
 					asmapi.log("WARN", "[JMTSUPERTRANS] You are using new forge!");
 				}
