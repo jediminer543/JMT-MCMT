@@ -24,7 +24,9 @@ import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.MCMT;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
-import org.jmt.mcmt.paralelised.ChunkLock;
+import org.jmt.mcmt.serdes.SerDesHookTypes;
+import org.jmt.mcmt.serdes.SerDesRegistry;
+import org.jmt.mcmt.serdes.filter.ISerDesFilter;
 
 import net.minecraft.block.BlockEventData;
 import net.minecraft.entity.Entity;
@@ -34,7 +36,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.PistonTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ServerChunkProvider;
@@ -230,8 +231,15 @@ public class ASMHookTerminator {
 		String taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
 		execute(taskName, () -> {
 			try {
-				currentEnts.incrementAndGet();
-				entityIn.tick();
+				//currentEnts.incrementAndGet();
+				//entityIn.tick();
+				final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
+				currentTEs.incrementAndGet();
+				if (filter != null) {
+					filter.serialise(entityIn::tick, entityIn, entityIn.getPosition(), serverworld, SerDesHookTypes.EntityTick);
+				} else {
+					entityIn.tick();
+				}
 			} finally {
 				currentEnts.decrementAndGet();
 			}
@@ -281,20 +289,12 @@ public class ASMHookTerminator {
 		taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
 		execute(taskName, () -> {
 			try {
-				final boolean doLock = filterTickableEntity(tte);
-				if (doLock) {
-					//ForkJoinPool.managedBlock(new RunnableManagedBlocker(() -> {
-					BlockPos bp = ((TileEntity) tte).getPos();
-					long[] locks = ChunkLock.lock(bp, 1);
-					try {
-						currentTEs.incrementAndGet();
-						tte.tick();
-					} finally {
-						ChunkLock.unlock(locks);
-					}
-					//}));
+				//final boolean doLock = filterTE(tte);
+				final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
+				currentTEs.incrementAndGet();
+				if (filter != null) {
+					filter.serialise(tte::tick, tte, ((TileEntity)tte).getPos(), world, SerDesHookTypes.TETick);
 				} else {
-					currentTEs.incrementAndGet();
 					tte.tick();
 				}
 			} catch (Exception e) {
