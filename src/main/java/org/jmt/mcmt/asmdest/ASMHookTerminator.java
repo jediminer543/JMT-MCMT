@@ -119,7 +119,10 @@ public class ASMHookTerminator {
 		String finalTaskName = taskName;
 		// add a CompletableFuture to the execution stack that runs the given task
 		stack.put(finalTaskName, () -> {
-			task.run();
+			if (GeneralConfig.opsTracing)
+				MCMT.time(task, finalTaskName);
+			else
+				task.run();
 			stack.remove(finalTaskName);
 		});
 	}
@@ -134,12 +137,7 @@ public class ASMHookTerminator {
 			// execute every queued tick
 			List<CompletableFuture<Void>> allTasks = new ArrayList<>(waitOn.size());
 			for (Entry<String, Runnable> x : waitOn.entrySet()) {
-				allTasks.add(CompletableFuture.runAsync(
-						GeneralConfig.opsTracing ? 
-								() -> {MCMT.time(x.getValue()); LOGGER.info("Finished " + x.getKey());} 
-								: x.getValue(),
-								exec)
-						);
+				allTasks.add(CompletableFuture.runAsync(x.getValue(), exec));
 				// if (GeneralConfig.opsTracing) LOGGER.info(x.getKey());
 			}
 			// convert all outstanding ticks to one CompletableFuture to wait on
@@ -178,7 +176,7 @@ public class ASMHookTerminator {
 			if (GeneralConfig.opsTracing)
 				LOGGER.info("This tick took " + Instant.now().minusMillis(before.toEpochMilli()).toEpochMilli() + " ms.");
 		}
-		
+
 		if (waitOn.size() > 0) {
 			LOGGER.fatal("Execution stack was not empty before continuing to next tick! " + waitOn.size());
 

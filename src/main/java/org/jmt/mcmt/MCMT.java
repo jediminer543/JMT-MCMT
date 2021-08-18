@@ -120,6 +120,12 @@ public class MCMT
     public static void time(Runnable r) {
     	Instant start = Instant.now();
     	r.run();
-    	LOGGER.info("Task took " + Instant.now().minusMillis(start.toEpochMilli()).toEpochMilli() + " ms.");
+    	LOGGER.info("Task finished, took " + Instant.now().minusMillis(start.toEpochMilli()).toEpochMilli() + " ms.");
+    }
+    
+    public static void time(Runnable r, String taskName) {
+    	Instant start = Instant.now();
+    	r.run();
+    	LOGGER.info(taskName + " finished in " + Instant.now().minusMillis(start.toEpochMilli()).toEpochMilli() + " ms.");
     }
 }
