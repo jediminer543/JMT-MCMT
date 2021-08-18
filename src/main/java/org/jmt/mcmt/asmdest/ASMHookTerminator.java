@@ -114,37 +114,44 @@ public class ASMHookTerminator {
 
 	// Add a Runnable to the execution stack
 	private static void execute(String taskName, Runnable task, ConcurrentHashMap<String, Runnable> stack) {
-		synchronized (stack) {
-			// ensure there is no accidental key collision
-			while (stack.containsKey(taskName)) taskName = taskName + "+";
-			String finalTaskName = taskName;
-			// add a CompletableFuture to the execution stack that runs the given task
-			stack.put(finalTaskName, task);
-		}
+		// ensure there is no accidental key collision
+		while (stack.containsKey(taskName)) taskName = taskName + "+";
+		String finalTaskName = taskName;
+		// add a CompletableFuture to the execution stack that runs the given task
+		stack.put(finalTaskName, () -> {
+			task.run();
+			stack.remove(finalTaskName);
+		});
 	}
 
 	private synchronized static void awaitCompletion(ConcurrentHashMap<String, Runnable> waitOn) {
-		synchronized (waitOn) {
-			if (waitOn.size() == 0) return; // avoid hefty operations if we don't need them
-			if (GeneralConfig.opsTracing) LOGGER.info("Awaiting " + waitOn.size() + " tasks...");
-			Instant before = Instant.now();
+		// synchronized (waitOn) {
+		if (waitOn.size() == 0) return; // avoid hefty operations if we don't need them
+		if (GeneralConfig.opsTracing) LOGGER.info("Awaiting " + waitOn.size() + " tasks...");
+		Instant before = Instant.now();
+		// loop
+		while (!waitOn.isEmpty()) {
 			// execute every queued tick
 			List<CompletableFuture<Void>> allTasks = new ArrayList<>(waitOn.size());
 			for (Entry<String, Runnable> x : waitOn.entrySet()) {
-				allTasks.add(CompletableFuture.runAsync(x.getValue(), exec));
-				if (GeneralConfig.opsTracing) LOGGER.info(x.getKey());
+				allTasks.add(CompletableFuture.runAsync(
+						GeneralConfig.opsTracing ? 
+								() -> {MCMT.time(x.getValue()); LOGGER.info("Finished " + x.getKey());} 
+								: x.getValue(),
+								exec)
+						);
+				// if (GeneralConfig.opsTracing) LOGGER.info(x.getKey());
 			}
 			// convert all outstanding ticks to one CompletableFuture to wait on
 			CompletableFuture<Void> tickSum = CompletableFuture.allOf(allTasks.toArray(new CompletableFuture[allTasks.size()]));
 			try {
 				// wait on all executing ticks for up to 1 second (20 ticks)
 				tickSum.get(1, TimeUnit.SECONDS);
-				waitOn.clear();
 				if (allTasks.size() > 0) LOGGER.info(waitOn.size());
 			} catch (TimeoutException e) {
 				LOGGER.error("This tick has taken longer than 1 second, investigating...");
 				LOGGER.error("Tick status: " + (tickSum.isDone() ? "done" : "not done"));
-				LOGGER.error("Queue size: " + allTasks.size());
+				LOGGER.error("Initial queue size: " + allTasks.size());
 				LOGGER.error("Current stuck tasks:");
 				StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
 				for (String taskName : waitOn.keySet()) sj.add(taskName);
@@ -153,12 +160,11 @@ public class ASMHookTerminator {
 				if (GeneralConfig.continueAfterStuckTick) {
 					LOGGER.fatal("CONTINUING AFTER STUCK TICK! I REALLY hope you have backups...");
 					tickSum.cancel(true); // cancel combined CompletableFuture
-					waitOn.clear(); // empty the execution stack for another go-around
 				} else {
 					LOGGER.error("Continuing to wait for tick to complete... (don't hold your breath)");
 					try {
 						tickSum.get(); // wait for this tick to complete (but if we're here, it probably won't)
-						waitOn.clear();
+						for (CompletableFuture<Void> i : allTasks) i.get();
 					} catch (InterruptedException | ExecutionException e1) {
 						LOGGER.fatal("Failed to wait for tick: ", e1);
 					} 
@@ -166,23 +172,21 @@ public class ASMHookTerminator {
 			} catch (ExecutionException | InterruptedException e) {
 				LOGGER.fatal("Tick execution failed: ", e);
 				tickSum.cancel(true);
-				waitOn.clear(); // clear execution stack without prompt, we're in uncharted waters anyways
 			}
 
 			// debug data for how long the tick took
 			if (GeneralConfig.opsTracing)
 				LOGGER.info("This tick took " + Instant.now().minusMillis(before.toEpochMilli()).toEpochMilli() + " ms.");
-
-			if (waitOn.size() > 0) {
-				LOGGER.fatal("Execution stack was not empty before continuing to next tick! " + waitOn.size());
-
-				StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
-				for (String taskName : waitOn.keySet()) sj.add(taskName);
-				LOGGER.fatal(sj.toString());
-
-				waitOn.clear();
-			}
 		}
+		
+		if (waitOn.size() > 0) {
+			LOGGER.fatal("Execution stack was not empty before continuing to next tick! " + waitOn.size());
+
+			StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
+			for (String taskName : waitOn.keySet()) sj.add(taskName);
+			LOGGER.fatal(sj.toString());
+		}
+		// }
 	}
 
 	public static void preTick(MinecraftServer server) {
@@ -210,25 +214,20 @@ public class ASMHookTerminator {
 			net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 			return;
 		} else {
-			String taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
+			String taskName =  "WorldTick: " + serverworld.toString() + "@" 
+					+ serverworld.func_234923_W_().func_240901_a_().toString(); // get dimension name
 			execute(taskName, () -> {
-				MCMT.time(() -> {
-					serverworld.tick(hasTimeLeft);
-					if (!GeneralConfig.disableWorldPostTick) {
-						//ForkJoinPool.managedBlock(
-						//		new RunnableManagedBlocker(() ->  { 
-						synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
-							net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-						}
-						//		}));
-						//} catch (InterruptedException e) {
-						//	e.printStackTrace();
-					} else {
+				serverworld.tick(hasTimeLeft);
+				if (!GeneralConfig.disableWorldPostTick) {
+					// execute world post-tick asynchronously
+					execute(taskName + "|PostTick", () -> {
+						// synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
 						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-					}
-				});
-				LOGGER.info("Completed " + taskName);
-				worldExecutionStack.remove(taskName);
+						// }
+					}, worldExecutionStack);
+				} else {
+					net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+				}
 			}, worldExecutionStack);
 		}
 	}
