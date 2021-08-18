@@ -1,5 +1,6 @@
 package org.jmt.mcmt;
 
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -114,5 +115,11 @@ public class MCMT
     	public static void registerEntities(RegistryEvent.Register<EntityType<?>> e) {
 
     	}
+    }
+    
+    public static void time(Runnable r) {
+    	Instant start = Instant.now();
+    	r.run();
+    	LOGGER.info("Task took " + Instant.now().minusMillis(start.toEpochMilli()).toEpochMilli() + " ms.");
     }
 }

@@ -212,9 +212,9 @@ public class ASMHookTerminator {
 		} else {
 			String taskName =  "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
 			execute(taskName, () -> {
-				serverworld.tick(hasTimeLeft);
-				if (!GeneralConfig.disableWorldPostTick) {
-					exec.execute(() -> {
+				MCMT.time(() -> {
+					serverworld.tick(hasTimeLeft);
+					if (!GeneralConfig.disableWorldPostTick) {
 						//ForkJoinPool.managedBlock(
 						//		new RunnableManagedBlocker(() ->  { 
 						synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
@@ -223,10 +223,12 @@ public class ASMHookTerminator {
 						//		}));
 						//} catch (InterruptedException e) {
 						//	e.printStackTrace();
-					});
-				} else {
-					net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-				}
+					} else {
+						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+					}
+				});
+				LOGGER.info("Completed " + taskName);
+				worldExecutionStack.remove(taskName);
 			}, worldExecutionStack);
 		}
 	}
