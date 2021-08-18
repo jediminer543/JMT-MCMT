@@ -112,7 +112,7 @@ public class ASMHookTerminator {
 		return isThreadPooled("MCMT", Thread.currentThread());
 	}
 
-	// create a CompletableFuture, run it, and add it to the execution stack
+	// Add a Runnable to the execution stack
 	private static void execute(String taskName, Runnable task, ConcurrentHashMap<String, Runnable> stack) {
 		synchronized (stack) {
 			// ensure there is no accidental key collision
@@ -296,12 +296,7 @@ public class ASMHookTerminator {
 			}, SerDesHookTypes.TETick);
 		} else {
 			execute(taskName, () -> {
-				try {
-					tte.tick();
-				} catch (Exception e) {
-					System.err.println("Exception ticking TE at " + ((TileEntity) tte).getPos());
-					e.printStackTrace();
-				}
+				tte.tick();
 			}, entityExecutionStack);
 		}
 	}
