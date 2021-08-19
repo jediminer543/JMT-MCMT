@@ -37,7 +37,7 @@ public class PistonFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public Set<Class<?>> getTargets() {
+	public Set<Class<?>> getFiltered() {
 		Set<Class<?>> out = new HashSet<Class<?>>();
 		out.add(PistonTileEntity.class);
 		return out;

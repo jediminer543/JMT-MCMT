@@ -27,8 +27,10 @@ import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.MCMT;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
+import org.jmt.mcmt.paralelised.GatedLock;
 import org.jmt.mcmt.serdes.SerDesHookTypes;
 import org.jmt.mcmt.serdes.SerDesRegistry;
+import org.jmt.mcmt.serdes.filter.AutoFilter;
 import org.jmt.mcmt.serdes.filter.ISerDesFilter;
 
 import net.minecraft.block.BlockEventData;
@@ -68,6 +70,7 @@ public class ASMHookTerminator {
 	//	static Phaser phaser;
 	public static ConcurrentHashMap<String, Runnable> worldExecutionStack = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, Runnable> entityExecutionStack = new ConcurrentHashMap<>();
+	private static GatedLock stackLock = new GatedLock();
 	public static ExecutorService exec;
 	static MinecraftServer mcServer;
 	static AtomicBoolean isTicking = new AtomicBoolean();
@@ -119,33 +122,35 @@ public class ASMHookTerminator {
 		String finalTaskName = taskName;
 		// add a CompletableFuture to the execution stack that runs the given task
 		stack.put(finalTaskName, () -> {
-			if (GeneralConfig.opsTracing)
-				MCMT.time(task, finalTaskName);
-			else
-				task.run();
+			task.run();
 			stack.remove(finalTaskName);
 		});
 	}
 
-	private synchronized static void awaitCompletion(ConcurrentHashMap<String, Runnable> waitOn) {
-		// synchronized (waitOn) {
+	private static void awaitCompletion(ConcurrentHashMap<String, Runnable> waitOn) {
 		if (waitOn.size() == 0) return; // avoid hefty operations if we don't need them
-		if (GeneralConfig.opsTracing) LOGGER.info("Awaiting " + waitOn.size() + " tasks...");
-		Instant before = Instant.now();
+		// don't re-execute if code is already running
+		if (stackLock.isLocked(waitOn)) {
+			stackLock.waitForUnlock(waitOn);
+			return;
+		}
+		stackLock.lockOn(waitOn);
+
+		//		if (GeneralConfig.opsTracing) LOGGER.info("Awaiting " + waitOn.size() + " tasks...");
+		//		Instant before = Instant.now();
+
 		// loop
 		while (!waitOn.isEmpty()) {
 			// execute every queued tick
 			List<CompletableFuture<Void>> allTasks = new ArrayList<>(waitOn.size());
 			for (Entry<String, Runnable> x : waitOn.entrySet()) {
 				allTasks.add(CompletableFuture.runAsync(x.getValue(), exec));
-				// if (GeneralConfig.opsTracing) LOGGER.info(x.getKey());
 			}
 			// convert all outstanding ticks to one CompletableFuture to wait on
 			CompletableFuture<Void> tickSum = CompletableFuture.allOf(allTasks.toArray(new CompletableFuture[allTasks.size()]));
 			try {
 				// wait on all executing ticks for up to 1 second (20 ticks)
 				tickSum.get(1, TimeUnit.SECONDS);
-				if (allTasks.size() > 0) LOGGER.info(waitOn.size());
 			} catch (TimeoutException e) {
 				LOGGER.error("This tick has taken longer than 1 second, investigating...");
 				LOGGER.error("Tick status: " + (tickSum.isDone() ? "done" : "not done"));
@@ -173,8 +178,8 @@ public class ASMHookTerminator {
 			}
 
 			// debug data for how long the tick took
-			if (GeneralConfig.opsTracing)
-				LOGGER.info("This tick took " + Instant.now().minusMillis(before.toEpochMilli()).toEpochMilli() + " ms.");
+			//			if (GeneralConfig.opsTracing)
+			//				LOGGER.info("This tick took " + Instant.now().minusMillis(before.toEpochMilli()).toEpochMilli() + " ms.");
 		}
 
 		if (waitOn.size() > 0) {
@@ -184,7 +189,8 @@ public class ASMHookTerminator {
 			for (String taskName : waitOn.keySet()) sj.add(taskName);
 			LOGGER.fatal(sj.toString());
 		}
-		// }
+
+		stackLock.unlock(waitOn);
 	}
 
 	public static void preTick(MinecraftServer server) {
@@ -239,12 +245,15 @@ public class ASMHookTerminator {
 
 		final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
 		if (filter != null) {
-			awaitCompletion(worldExecutionStack); // force world ticks to complete first
 			filter.serialise(entityIn::tick, entityIn, entityIn.getPosition(), serverworld, task -> {
-				execute(taskName, task, entityExecutionStack);
+				execute(taskName, () -> {
+					awaitCompletion(worldExecutionStack); // force world ticks to complete first
+					task.run();
+				}, entityExecutionStack);
 			}, SerDesHookTypes.EntityTick);
 		} else {
 			execute(taskName, () -> {
+				awaitCompletion(worldExecutionStack); // force world ticks to complete first
 				entityIn.tick();
 			}, entityExecutionStack);
 		}
@@ -287,12 +296,15 @@ public class ASMHookTerminator {
 		String taskName = "TETick: " + tte.toString()  + "@" + tte.hashCode();
 		final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
 		if (filter != null) {
-			awaitCompletion(worldExecutionStack); // force world ticks to complete first
 			filter.serialise(tte::tick, tte, ((TileEntity)tte).getPos(), world, (task) -> {
-				execute(taskName, task, entityExecutionStack);
+				execute(taskName, () -> {
+					awaitCompletion(worldExecutionStack); // force world ticks to complete first
+					task.run();
+				}, entityExecutionStack);
 			}, SerDesHookTypes.TETick);
 		} else {
 			execute(taskName, () -> {
+				awaitCompletion(worldExecutionStack); // force world ticks to complete first
 				tte.tick();
 			}, entityExecutionStack);
 		}

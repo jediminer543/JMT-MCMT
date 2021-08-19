@@ -35,12 +35,12 @@ public class LegacyFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public Set<Class<?>> getTargets() {
+	public Set<Class<?>> getFiltered() {
 		return GeneralConfig.teBlackList;
 	}
 	
 	@Override
-	public Set<Class<?>> getWhitelist() {
+	public Set<Class<?>> getAlwaysAsync() {
 		return GeneralConfig.teWhiteList;
 	}
 

@@ -21,7 +21,7 @@ public class SingleExecutionPool implements ISerDesPool {
 			Consumer<Runnable> executeMultithreaded, @Nullable ISerDesOptions options) {
 		try {
 			l.lock();
-			task.run();;
+			task.run();
 		} finally {
 			l.unlock();
 		}

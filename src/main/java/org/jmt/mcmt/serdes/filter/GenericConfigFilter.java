@@ -72,12 +72,12 @@ public class GenericConfigFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public Set<Class<?>> getWhitelist() {
+	public Set<Class<?>> getAlwaysAsync() {
 		return whitelist;
 	}
 	
 	@Override
-	public Set<Class<?>> getTargets() {
+	public Set<Class<?>> getFiltered() {
 		return blacklist;
 	}
 	
@@ -85,12 +85,12 @@ public class GenericConfigFilter implements ISerDesFilter {
 	public ClassMode getModeOnline(Class<?> c) {
 		if (regexBlacklist != null) {
 			if (regexBlacklist.matcher(c.getName()).find()) {
-				return ClassMode.CHUNKLOCK;
+				return ClassMode.FILTERED;
 			}
 		}
 		if (regexWhitelist != null) {
 			if (regexWhitelist.matcher(c.getName()).find()) {
-				return ClassMode.WHITELIST;
+				return ClassMode.ALWAYS_ASYNC;
 			}
 		}
 		return ClassMode.UNKNOWN;
