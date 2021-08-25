@@ -1,6 +1,5 @@
 package org.jmt.mcmt.asmdest;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -30,7 +29,6 @@ import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.paralelised.GatedLock;
 import org.jmt.mcmt.serdes.SerDesHookTypes;
 import org.jmt.mcmt.serdes.SerDesRegistry;
-import org.jmt.mcmt.serdes.filter.AutoFilter;
 import org.jmt.mcmt.serdes.filter.ISerDesFilter;
 
 import net.minecraft.block.BlockEventData;
@@ -75,6 +73,12 @@ public class ASMHookTerminator {
 	static MinecraftServer mcServer;
 	static AtomicBoolean isTicking = new AtomicBoolean();
 	static AtomicInteger threadID = new AtomicInteger();
+
+	// Statistics
+	public static AtomicInteger currentWorlds = new AtomicInteger();
+	public static AtomicInteger currentEnts = new AtomicInteger();
+	public static AtomicInteger currentTEs = new AtomicInteger();
+	public static AtomicInteger currentEnvs = new AtomicInteger();
 
 	public static void setupThreadpool(int parallelism) {
 		threadID = new AtomicInteger();
@@ -220,17 +224,23 @@ public class ASMHookTerminator {
 		} else {
 			String taskName =  "WorldTick: " + serverworld.toString() + "@" 
 					+ serverworld.func_234923_W_().func_240901_a_().toString(); // get dimension name
+
 			execute(taskName, () -> {
-				serverworld.tick(hasTimeLeft);
-				if (!GeneralConfig.disableWorldPostTick) {
-					// execute world post-tick asynchronously
-					execute(taskName + "|PostTick", () -> {
-						// synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
+				try {
+					currentWorlds.incrementAndGet();
+					serverworld.tick(hasTimeLeft);
+					if (!GeneralConfig.disableWorldPostTick) {
+						// execute world post-tick asynchronously
+						execute(taskName + "|PostTick", () -> {
+							// synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
+							net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+							// }
+						}, worldExecutionStack);
+					} else {
 						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-						// }
-					}, worldExecutionStack);
-				} else {
-					net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+					}
+				} finally {
+					currentWorlds.decrementAndGet();
 				}
 			}, worldExecutionStack);
 		}
@@ -242,20 +252,23 @@ public class ASMHookTerminator {
 			return;
 		}
 		String taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
+		Runnable r = () -> {
+			try {
+				currentEnts.incrementAndGet();
+				awaitCompletion(worldExecutionStack); // force world ticks to complete first
+				entityIn.tick();
+			} finally {
+				currentEnts.decrementAndGet();
+			}
+		};
 
 		final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
 		if (filter != null) {
 			filter.serialise(entityIn::tick, entityIn, entityIn.getPosition(), serverworld, task -> {
-				execute(taskName, () -> {
-					awaitCompletion(worldExecutionStack); // force world ticks to complete first
-					task.run();
-				}, entityExecutionStack);
+				execute(taskName, r, entityExecutionStack);
 			}, SerDesHookTypes.EntityTick);
 		} else {
-			execute(taskName, () -> {
-				awaitCompletion(worldExecutionStack); // force world ticks to complete first
-				entityIn.tick();
-			}, entityExecutionStack);
+			execute(taskName, r, entityExecutionStack);
 		}
 	}
 
@@ -266,7 +279,12 @@ public class ASMHookTerminator {
 		}
 		String taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
 		execute(taskName, () -> {
-			world.tickEnvironment(chunk, k);
+			try {
+				currentEnvs.incrementAndGet();
+				world.tickEnvironment(chunk, k);
+			} finally {
+				currentEnvs.decrementAndGet();
+			}
 		}, worldExecutionStack);
 	}
 
@@ -298,8 +316,13 @@ public class ASMHookTerminator {
 		if (filter != null) {
 			filter.serialise(tte::tick, tte, ((TileEntity)tte).getPos(), world, (task) -> {
 				execute(taskName, () -> {
-					awaitCompletion(worldExecutionStack); // force world ticks to complete first
-					task.run();
+					try {
+						currentTEs.incrementAndGet();
+						awaitCompletion(worldExecutionStack); // force world ticks to complete first
+						task.run();
+					} finally {
+						currentTEs.decrementAndGet();
+					}
 				}, entityExecutionStack);
 			}, SerDesHookTypes.TETick);
 		} else {
