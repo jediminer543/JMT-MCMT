@@ -5,7 +5,6 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import net.minecraft.util.RegistryKey;
 import net.minecraft.world.server.ServerWorld;
 
 // allows unification of multiple MC/Forge versions into one jar
@@ -13,26 +12,33 @@ import net.minecraft.world.server.ServerWorld;
 // Try not to go too overboard using these, as reflection operations are VERY expensive.
 public class VersionAdapter {
 	private static MethodTable table = (new VersionAdapter()).new MethodTable();
+	
+	private static final String SERVER_WORLD = "net.minecraft.world.server.ServerWorld";
+	private static final String REGISTRY_KEY = "net.minecraft.util.RegistryKey";
+	
 
 	private static Function<ServerWorld, String> dynamicGetDimensionName;
 
 	public class MethodTable {
-		private ConcurrentHashMap<Class<?>, ConcurrentHashMap<String, Method>> table = new ConcurrentHashMap<>();
+		private ConcurrentHashMap<String, ConcurrentHashMap<String, Method>> table = new ConcurrentHashMap<>();
 
-		public void add(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
-			ConcurrentHashMap<String, Method> m = table.computeIfAbsent(clazz, 
-					(c) -> {return new ConcurrentHashMap<String, Method>();});
+		public void add(String className, String methodName, Class<?>... parameterTypes) {
 			try {
+				Class<?> clazz = this.getClass().getClassLoader().loadClass(className);
+
+				ConcurrentHashMap<String, Method> m = table.computeIfAbsent(className, 
+						(c) -> {return new ConcurrentHashMap<String, Method>();});
+
 				Method method = clazz.getMethod(methodName, parameterTypes);
 				method.setAccessible(true);
 				m.put(methodName, method);
-			} catch (NoSuchMethodException | SecurityException e) {
+			} catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
 				throw new RuntimeException(e);
 			}
 		}
 
-		public Method get(Class<?> clazz, String methodName) {
-			return table.get(clazz).get(methodName);
+		public Method get(String className, String methodName) {
+			return table.get(className).get(methodName);
 		}
 	}
 
@@ -40,30 +46,30 @@ public class VersionAdapter {
 		for (Method i : ServerWorld.class.getMethods()) {
 			switch (i.getName()) {
 			case "func_234923_W_": // 1.16
-				table.add(ServerWorld.class, "func_234923_W_");
-				table.add(RegistryKey.class, "func_240901_a_");
+				table.add(SERVER_WORLD, "func_234923_W_");
+				table.add(REGISTRY_KEY, "func_240901_a_");
 				dynamicGetDimensionName = (sw) -> {
 					// return sw.func_234923_W_().func_240901_a_().toString();
-					Object f;
 					try {
-						f = i.invoke(sw);
-						return f.getClass().getMethod("func_240901_a_").invoke(f).toString();
+						Object f = table.get(SERVER_WORLD, "func_234923_W_").invoke(sw);
+						return table.get(REGISTRY_KEY, "func_240901_a_").invoke(f).toString();
 					} catch (IllegalAccessException | IllegalArgumentException | 
-							InvocationTargetException | NoSuchMethodException | 
-							SecurityException e) {
+							InvocationTargetException | SecurityException e) {
 						e.printStackTrace();
 						return "ReflectionFailure";
 					}
-
 				};
 				break;
 
 			case "getDimension": // 1.15
+				table.add(SERVER_WORLD, "getDimension");
+				table.add("net.minecraft.world.dimension.Dimension", "getType");
+				table.add("net.minecraft.world.dimension.DimensionType", "getRegistryName");
+				
 				dynamicGetDimensionName = (sw) -> {
 					// return sw.getDimension().getType().getRegistryName().toString();
-					Object dimension;
 					try {
-						dimension = i.invoke(sw);
+						Object dimension = i.invoke(sw);
 						Object dimensionType = dimension.getClass().getMethod("getType").invoke(dimension);
 						return dimensionType.getClass().getMethod("getRegistryName").invoke(dimensionType).toString();
 					} catch (IllegalAccessException | IllegalArgumentException | 
@@ -77,10 +83,10 @@ public class VersionAdapter {
 			default:
 				break;
 			}
+			
 		}
-		if (dynamicGetDimensionName == null) {
+		if (dynamicGetDimensionName == null)
 			throw new NoClassDefFoundError("Unknown Minecraft/Forge version.");
-		}
 	}
 
 	public static String getDimensionName(ServerWorld sw) {
