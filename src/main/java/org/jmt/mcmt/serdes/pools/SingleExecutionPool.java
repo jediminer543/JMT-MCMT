@@ -19,12 +19,16 @@ public class SingleExecutionPool implements ISerDesPool {
 	@Override
 	public void serialise(Runnable task, Object o, BlockPos bp, World w,
 			Consumer<Runnable> executeMultithreaded, @Nullable ISerDesOptions options) {
-		try {
-			l.lock();
-			task.run();
-		} finally {
-			l.unlock();
-		}
+		// Push to the executeMultithreaded as it's allowed to execute off main thread, just not more than one at a time
+		// The idea for this pool is global stuff like enderchests/tanks or equiv where you have a globally accessible single data element that will probably break
+		executeMultithreaded.accept(() -> {
+			try {
+				l.lock();
+				task.run();
+			} finally {
+				l.unlock();
+			}
+		});
 	}
 
 }
