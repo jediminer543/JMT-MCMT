@@ -32,7 +32,19 @@ public class VersionAdapter {
 				Method method = clazz.getMethod(methodName, parameterTypes);
 				method.setAccessible(true);
 				m.put(methodName, method);
-			} catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
+			} catch(NoSuchMethodException e) {
+				try {
+					Class<?> clazz = this.getClass().getClassLoader().loadClass(className);
+					System.err.println("Methods for " + clazz.getName() + ":");
+					for (Method i : clazz.getMethods()) {
+						System.err.println(i.getName() + "() | " + i.getReturnType().getSimpleName());
+					}
+				} catch (ClassNotFoundException e1) {
+					e1.printStackTrace();
+				}
+				throw new RuntimeException("Failed to find requested method.", e);
+				
+			} catch (SecurityException | ClassNotFoundException e) {
 				throw new RuntimeException(e);
 			}
 		}
@@ -44,6 +56,7 @@ public class VersionAdapter {
 
 	private static void adaptGetDimensionName() {
 		for (Method i : ServerWorld.class.getMethods()) {
+			// System.out.println("Checking function: " + i.getName() + "() | " + i.getReturnType().getSimpleName());
 			switch (i.getName()) {
 			case "func_234923_W_": // 1.16
 				table.add(SERVER_WORLD, "func_234923_W_");
@@ -61,16 +74,16 @@ public class VersionAdapter {
 				};
 				break;
 
-			case "getDimension": // 1.15
-				table.add(SERVER_WORLD, "getDimension");
-				table.add("net.minecraft.world.dimension.Dimension", "getType");
-				table.add("net.minecraft.world.dimension.DimensionType", "getRegistryName");
+			case "func_201675_m": // 1.15
+				table.add(SERVER_WORLD, "func_201675_m"); // func_201675_m -> getDimension
+				table.add("net.minecraft.world.dimension.Dimension", "func_186058_p"); // func_186058_p -> getType
+				table.add("net.minecraft.world.dimension.DimensionType", "getRegistryName"); // 
 				
 				dynamicGetDimensionName = (sw) -> {
 					// return sw.getDimension().getType().getRegistryName().toString();
 					try {
 						Object dimension = i.invoke(sw);
-						Object dimensionType = dimension.getClass().getMethod("getType").invoke(dimension);
+						Object dimensionType = dimension.getClass().getMethod("func_186058_p").invoke(dimension);
 						return dimensionType.getClass().getMethod("getRegistryName").invoke(dimensionType).toString();
 					} catch (IllegalAccessException | IllegalArgumentException | 
 							InvocationTargetException | NoSuchMethodException | 
