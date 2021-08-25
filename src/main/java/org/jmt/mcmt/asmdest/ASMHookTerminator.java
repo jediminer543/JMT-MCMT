@@ -24,6 +24,7 @@ import java.util.function.BooleanSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.MCMT;
+import org.jmt.mcmt.VersionAdapter;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.paralelised.GatedLock;
@@ -223,7 +224,7 @@ public class ASMHookTerminator {
 			return;
 		} else {
 			String taskName =  "WorldTick: " + serverworld.toString() + "@" 
-					+ serverworld.func_234923_W_().func_240901_a_().toString(); // get dimension name
+					+ VersionAdapter.getDimensionName(serverworld);
 
 			execute(taskName, () -> {
 				try {
