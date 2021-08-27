@@ -53,6 +53,7 @@ function initializeCoreMod() {
 				var targetVar = null;
 				for (var idx in method.localVariables) {
             		var lv = method.localVariables[idx];
+					if (lv == null) continue; // Should never be hit but I don't trust that'
 					asmapi.log("WARN", "[JMTSUPERTRANS] " + lv.desc + ":" + lv.index);
 					if (lv.index == cfl && lv.desc.endsWith("CompletableFuture;")) {
 						asmapi.log("WARN", "[JMTSUPERTRANS] found: " + lv.desc + ":" + lv.index);
