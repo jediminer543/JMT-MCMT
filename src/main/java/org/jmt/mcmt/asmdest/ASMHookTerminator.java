@@ -24,7 +24,6 @@ import java.util.function.BooleanSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jmt.mcmt.MCMT;
-import org.jmt.mcmt.VersionAdapter;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.paralelised.GatedLock;
@@ -223,8 +222,14 @@ public class ASMHookTerminator {
 			net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
 			return;
 		} else {
-			String taskName =  "WorldTick: " + serverworld.toString() + "@" 
-					+ VersionAdapter.getDimensionName(serverworld);
+			String taskName =  "WorldTick: " + serverworld.toString() + "@" +
+					// append world's dimension name to world tick task
+					/* 1.16.1 code; AKA the only thing that changed  */
+					serverworld.func_234923_W_().func_240901_a_().toString();
+					/* */
+					/* 1.15.2 code; AKA the only thing that changed  
+					serverworld.getDimension().getType().getRegistryName().toString();
+					/* */
 
 			execute(taskName, () -> {
 				try {
