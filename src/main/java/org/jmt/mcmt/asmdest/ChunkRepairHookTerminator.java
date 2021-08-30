@@ -1,6 +1,8 @@
 package org.jmt.mcmt.asmdest;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
@@ -34,6 +36,20 @@ public class ChunkRepairHookTerminator {
 	private static final Logger LOGGER = LogManager.getLogger();
 	
 	private static boolean bypassLoadTarget = false;
+	
+	public static class BrokenChunkLocator {
+		long chunkPos;
+		CompletableFuture<?> maincf;
+		CompletableFuture<?> brokecf;
+		public BrokenChunkLocator(long chunkPos, CompletableFuture<?> maincf, CompletableFuture<?> brokecf) {
+			super();
+			this.chunkPos = chunkPos;
+			this.maincf = maincf;
+			this.brokecf = brokecf;
+		}
+	}
+	
+	public static List<BrokenChunkLocator> breaks = new ArrayList<>();
 	
 	public static boolean isBypassLoadTarget() {
 		return bypassLoadTarget;
@@ -81,14 +97,19 @@ public class ChunkRepairHookTerminator {
 					} else {
 						System.err.println(completableFuture.toString());
 						ChunkHolder chunkholder = scp.func_217213_a(chunkpos);
+						CompletableFuture<?> firstBroke = null;
 						for (ChunkStatus cs : ChunkStatus.getAll()) {
 							CompletableFuture<Either<IChunk, IChunkLoadingError>> cf = chunkholder.func_219301_a(cs);
 							if (cf == ChunkHolder.MISSING_CHUNK_FUTURE) {
 								System.out.println("Status: " + cs.toString() + " is not yet loaded");
 							} else {
 								System.out.println("Status: " + cs.toString() + " is " + cf.toString());
+								if (firstBroke == null && !cf.toString().contains("Completed normally")) {
+									firstBroke = cf;
+								}
 							}
 						}
+						breaks.add(new BrokenChunkLocator(chunkpos, completableFuture, firstBroke));
 						completableFuture.complete(Either.right(new IChunkLoadingError() {
 							@Override
 							public String toString() {
