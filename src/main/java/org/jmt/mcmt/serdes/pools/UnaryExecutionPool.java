@@ -10,9 +10,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 /**
- * Run on main thread.
+ * Run one-at-a-time.
  */
-public class SingleExecutionPool implements ISerDesPool {
+public class UnaryExecutionPool implements ISerDesPool {
 
 	private Lock l = new ReentrantLock();
 

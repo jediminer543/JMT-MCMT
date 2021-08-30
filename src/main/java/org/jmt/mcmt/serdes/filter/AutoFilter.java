@@ -36,7 +36,7 @@ public class AutoFilter implements ISerDesFilter {
 	
 	@Override
 	public void init() {
-		pool = SerDesRegistry.getOrCreatePool("AUTO", MainThreadExecutionPool::new);
+		pool = SerDesRegistry.getOrCreatePool("MAIN", MainThreadExecutionPool::new);
 	}
 	
 	@Override
@@ -56,13 +56,17 @@ public class AutoFilter implements ISerDesFilter {
 	}
 	
 	public void addClassToBlacklist(Class<?> c) {
+		addClassToBlacklist(c, "CHUNK_LOCK");
+	}
+	
+	public void addClassToBlacklist(Class<?> c, String pool) {
 		LOGGER.error("Adding " + c.getName() + " to blacklist.");
 		SerDesConfig.createFilterConfig(
 				"auto-" + c.getName(),
 				10,
 				Lists.newArrayList(),
 				Lists.newArrayList(c.getName()),
-				"SINGLE"
+				pool
 				);
 		filtered.add(c);
 	}

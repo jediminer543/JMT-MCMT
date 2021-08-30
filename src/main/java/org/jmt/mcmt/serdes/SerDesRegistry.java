@@ -3,6 +3,7 @@ package org.jmt.mcmt.serdes;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.jmt.mcmt.serdes.pools.ChunkLockPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool.ISerDesOptions;
 import org.jmt.mcmt.serdes.pools.MainThreadExecutionPool;
+import org.jmt.mcmt.serdes.pools.UnaryExecutionPool;
 
 import net.minecraft.tileentity.PistonTileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -160,8 +162,10 @@ public class SerDesRegistry {
 	public static void initPools() {
 		registry.clear();
 		// HARDCODED DEFAULTS
-		getOrCreatePool("LEGACY", ChunkLockPool::new);
-		getOrCreatePool("SINGLE", MainThreadExecutionPool::new);
+		ISerDesPool chunkLockPool = getOrCreatePool("CHUNK_LOCK", ChunkLockPool::new);
+		registry.put("LEGACY", chunkLockPool); // copy the CHUNK_LOCK pool to the LEGACY entry so they share the same pool object
+		getOrCreatePool("MAIN", MainThreadExecutionPool::new);
+		getOrCreatePool("UNARY", UnaryExecutionPool::new);
 		// LOADED FROM CONFIG
 		List<PoolConfig> pcl = SerDesConfig.getPools();
 		if (pcl != null) for (PoolConfig pc : pcl) {
@@ -261,9 +265,16 @@ public class SerDesRegistry {
 						task.run();
 					} catch (Exception e) {
 						LOGGER.error("Exception running " + obj.getClass().getName() + " asynchronusly", e);
-						AutoFilter.singleton().addClassToBlacklist(obj.getClass());
+						removeFromWhitelist(hookType, obj.getClass());
+						// check to see if the UNARY pool is a better option for the generated filter
+						if (e instanceof ConcurrentModificationException) 
+							AutoFilter.singleton().addClassToBlacklist(obj.getClass(), "UNARY");
+						else
+							// default to CHUNK_LOCK pool (acceptable for most cases)
+							AutoFilter.singleton().addClassToBlacklist(obj.getClass());
 						// TODO: this could leave a tick in an incomplete state. should the full exception be thrown?
 						if (e instanceof RuntimeException) throw e;
+						throw new RuntimeException(e);
 					}
 				});
 			}
