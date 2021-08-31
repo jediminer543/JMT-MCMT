@@ -2,6 +2,7 @@ package org.jmt.mcmt.asmdest;
 
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,9 @@ public class ASMHookTerminator {
 	//	static Phaser phaser;
 	public static ConcurrentHashMap<String, Runnable> worldExecutionStack = new ConcurrentHashMap<>();
 	public static ConcurrentHashMap<String, Runnable> entityExecutionStack = new ConcurrentHashMap<>();
+	
+	public static Set<String> tracerStack = null;
+	
 	private static GatedLock stackLock = new GatedLock();
 	public static ExecutorService exec;
 	static MinecraftServer mcServer;
@@ -79,6 +83,8 @@ public class ASMHookTerminator {
 	public static AtomicInteger currentEnts = new AtomicInteger();
 	public static AtomicInteger currentTEs = new AtomicInteger();
 	public static AtomicInteger currentEnvs = new AtomicInteger();
+	
+	
 
 	public static void setupThreadpool(int parallelism) {
 		threadID = new AtomicInteger();
@@ -140,8 +146,8 @@ public class ASMHookTerminator {
 		}
 		stackLock.lockOn(waitOn);
 
-		//		if (GeneralConfig.opsTracing) LOGGER.info("Awaiting " + waitOn.size() + " tasks...");
-		//		Instant before = Instant.now();
+		if (GeneralConfig.opsTracing)
+			tracerStack = new HashSet<>(waitOn.keySet());
 
 		// loop
 		while (!waitOn.isEmpty()) {
@@ -159,7 +165,19 @@ public class ASMHookTerminator {
 				LOGGER.error("This tick has taken longer than 1 second, investigating...");
 				LOGGER.error("Tick status: " + (tickSum.isDone() ? "done" : "not done"));
 				LOGGER.error("Initial queue size: " + allTasks.size());
-				LOGGER.error("Current stuck tasks:");
+				
+				if (GeneralConfig.opsTracing) {
+					// get all ticks still in queue that were also in the starting queue
+					tracerStack.retainAll(waitOn.keySet());
+					
+					LOGGER.error("Current stuck ticks in queue:");
+					StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
+					for (String taskName : tracerStack) sj.add(taskName);
+					LOGGER.error(sj.toString());
+					LOGGER.error("=====");
+				}
+				
+				LOGGER.error("Current queue:");
 				StringJoiner sj = new StringJoiner(", ", "[ ", " ]");
 				for (String taskName : waitOn.keySet()) sj.add(taskName);
 				LOGGER.error(sj.toString());
