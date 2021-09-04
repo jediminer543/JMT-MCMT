@@ -366,7 +366,7 @@ public class ASMHookTerminator {
 	}
 	
 	public static boolean shouldThreadChunks() {
-		return true;
+		return false;
 	}
 	
 	//Below is debug code for science reasons
