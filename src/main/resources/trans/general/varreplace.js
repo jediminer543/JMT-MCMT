@@ -623,5 +623,44 @@ function initializeCoreMod() {
             	return methodNode;
             }
     	},
+		'TicketManagerTickets': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.server.TicketManager',
+                "methodName": "<init>",
+        		"methodDesc": "(Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;)V"
+            },
+            "transformer": function(methodNode) {
+
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+            	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+            	var TypeInsnNode = Java.type("org.objectweb.asm.tree.TypeInsnNode");
+            	var MethodType = asmapi.MethodType;
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] TicketManagerTickets Transformer Called");
+            	
+            	var initTgt = asmapi.findFirstMethodCall(methodNode, MethodType.SPECIAL, 
+            			"it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap", "<init>", "()V");
+            	
+            	var il = new InsnList();
+            	il.add(new InsnNode(opcodes.POP))
+            	il.add(new TypeInsnNode(opcodes.NEW, "org/jmt/mcmt/paralelised/fastutil/Long2ObjectOpenConcurrentHashMap"))
+            	il.add(new InsnNode(opcodes.DUP))
+            	il.add(new MethodInsnNode(opcodes.INVOKESPECIAL, 
+            			"org/jmt/mcmt/paralelised/fastutil/Long2ObjectOpenConcurrentHashMap", "<init>",
+            			"()V"))
+            			
+            	var instructions = methodNode.instructions;
+            	
+            	instructions.insert(initTgt, il);
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] TicketManagerTickets Transformer Complete");
+            	
+            	return methodNode;
+            }
+    	},
     }
 }

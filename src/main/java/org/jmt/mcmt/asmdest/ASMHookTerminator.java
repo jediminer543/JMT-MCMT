@@ -22,6 +22,7 @@ import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.serdes.SerDesHookTypes;
 import org.jmt.mcmt.serdes.SerDesRegistry;
 import org.jmt.mcmt.serdes.filter.ISerDesFilter;
+import org.jmt.mcmt.serdes.pools.PostExecutePool;
 
 import net.minecraft.block.BlockEventData;
 import net.minecraft.entity.Entity;
@@ -316,6 +317,14 @@ public class ASMHookTerminator {
 			p.arriveAndAwaitAdvance();
 			isTicking.set(false);
 			p = null;
+			//PostExecute logic
+			Deque<Runnable> queue = PostExecutePool.POOL.getQueue();
+			Iterator<Runnable> qi = queue.iterator();
+			while (qi.hasNext()) {
+				Runnable r = qi.next();
+				r.run();
+				qi.remove();
+			}
 		}
 	}
 	
@@ -354,6 +363,10 @@ public class ASMHookTerminator {
 	public static <T> void fixSTL(ServerTickList<T> stl) {
 		LOGGER.debug("FixSTL Called");
 		stl.pendingTickListEntriesTreeSet.addAll(stl.pendingTickListEntriesHashSet);
+	}
+	
+	public static boolean shouldThreadChunks() {
+		return true;
 	}
 	
 	//Below is debug code for science reasons

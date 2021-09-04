@@ -97,11 +97,17 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		//log.debug("Missed chunk " + i + " on status "  + requiredStatus.toString());
 		
 		IChunk cl;
-		synchronized (this) {
-			if (chunkCache.containsKey(new ChunkCacheAddress(i, requiredStatus)) && (c = lookupChunk(i, requiredStatus, false)) != null) {
-				return c;
-			}
+		if (ASMHookTerminator.shouldThreadChunks()) {
+			// No cache recheck as no time has passed since last cache check
+			// Unlike sync case
 			cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+		} else {
+			synchronized (this) {
+				if (chunkCache.containsKey(new ChunkCacheAddress(i, requiredStatus)) && (c = lookupChunk(i, requiredStatus, false)) != null) {
+					return c;
+				}
+				cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+			}
 		}
 		cacheChunk(i, cl, requiredStatus);
 		return cl;
