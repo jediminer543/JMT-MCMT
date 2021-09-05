@@ -16,6 +16,9 @@ import com.mojang.datafixers.util.Either;
 
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.BiomeContainer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.ChunkStatus;
@@ -55,7 +58,9 @@ public class DebugHookTerminator {
 	public static boolean isBypassLoadTarget() {
 		return bypassLoadTarget;
 	}
-		
+	
+	static boolean TEMPBOOLPLSREMOVE = false;
+	
 	public static void chunkLoadDrive(ServerChunkProvider.ChunkExecutor executor, BooleanSupplier isDone, ServerChunkProvider scp, 
 			CompletableFuture<Either<IChunk, IChunkLoadingError>> completableFuture, long chunkpos) {
 		if (!GeneralConfig.enableChunkTimeout) {
@@ -77,16 +82,27 @@ public class DebugHookTerminator {
 					LOGGER.error("", new TimeoutException("Error fetching chunk " + chunkpos));	
 					bypassLoadTarget = true;
 					if (GeneralConfig.enableTimeoutRegen) {
-						try {
-							CompoundNBT cnbt = scp.chunkManager.readChunk(new ChunkPos(chunkpos));
-							if (cnbt != null) {
-								ChunkPrimer cp = ChunkSerializer.read(scp.world, scp.chunkManager.templateManager, scp.chunkManager.pointOfInterestManager, new ChunkPos(chunkpos), cnbt);
-								completableFuture.complete(Either.left(new Chunk(scp.getWorld(), cp)));
+						/* 1.16.1 code; AKA the only thing that changed  */
+						// TODO build a 1.15 version of this
+						if (TEMPBOOLPLSREMOVE) {
+							// Generate a new empty chunk
+							Chunk out = new Chunk(scp.world, new ChunkPos(chunkpos), new BiomeContainer(scp.world.func_241828_r().func_243612_b(Registry.BIOME_KEY), new Biome[0]));
+							// SCIENCE
+							completableFuture.complete(Either.left(out));
+						} else
+						/* */
+						{
+							try {
+								CompoundNBT cnbt = scp.chunkManager.readChunk(new ChunkPos(chunkpos));
+								if (cnbt != null) {
+									ChunkPrimer cp = ChunkSerializer.read(scp.world, scp.chunkManager.templateManager, scp.chunkManager.pointOfInterestManager, new ChunkPos(chunkpos), cnbt);
+									completableFuture.complete(Either.left(new Chunk(scp.getWorld(), cp)));
+								}
+							} catch (IOException e) {
+								e.printStackTrace();
 							}
-						} catch (IOException e) {
-							e.printStackTrace();
+							completableFuture.complete(ChunkHolder.MISSING_CHUNK);
 						}
-						completableFuture.complete(ChunkHolder.MISSING_CHUNK);
 					} else {
 						System.err.println(completableFuture.toString());
 						ChunkHolder chunkholder = scp.func_217213_a(chunkpos);

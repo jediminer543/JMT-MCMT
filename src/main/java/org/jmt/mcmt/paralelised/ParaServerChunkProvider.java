@@ -45,6 +45,7 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 	protected AtomicInteger access = new AtomicInteger(Integer.MIN_VALUE);
 	protected static final int CACHE_SIZE = 512;
 	protected Thread cacheThread;
+	protected ChunkLock loadingChunkLock = new ChunkLock();
 	Logger log = LogManager.getLogger();
 	Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
 
@@ -98,9 +99,16 @@ public class ParaServerChunkProvider extends ServerChunkProvider {
 		
 		IChunk cl;
 		if (ASMHookTerminator.shouldThreadChunks()) {
-			// No cache recheck as no time has passed since last cache check
-			// Unlike sync case
-			cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+			// Multithread but still limit to 1 load op per chunk
+			long[] locks = loadingChunkLock.lock(i, 0);
+			try {
+				if ((c = lookupChunk(i, requiredStatus, false)) != null) {
+					return c;
+				}
+				cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+			} finally {
+				loadingChunkLock.unlock(locks);
+			}
 		} else {
 			synchronized (this) {
 				if (chunkCache.containsKey(new ChunkCacheAddress(i, requiredStatus)) && (c = lookupChunk(i, requiredStatus, false)) != null) {
