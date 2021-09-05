@@ -16,9 +16,12 @@ import com.mojang.datafixers.util.Either;
 
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.registry.MutableRegistry;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeContainer;
+import net.minecraft.world.biome.provider.BiomeProvider;
+import net.minecraft.world.biome.provider.SingleBiomeProvider;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.ChunkStatus;
@@ -58,9 +61,7 @@ public class DebugHookTerminator {
 	public static boolean isBypassLoadTarget() {
 		return bypassLoadTarget;
 	}
-	
-	static boolean TEMPBOOLPLSREMOVE = false;
-	
+		
 	public static void chunkLoadDrive(ServerChunkProvider.ChunkExecutor executor, BooleanSupplier isDone, ServerChunkProvider scp, 
 			CompletableFuture<Either<IChunk, IChunkLoadingError>> completableFuture, long chunkpos) {
 		if (!GeneralConfig.enableChunkTimeout) {
@@ -81,12 +82,15 @@ public class DebugHookTerminator {
 				} else {
 					LOGGER.error("", new TimeoutException("Error fetching chunk " + chunkpos));	
 					bypassLoadTarget = true;
-					if (GeneralConfig.enableTimeoutRegen) {
+					if (GeneralConfig.enableTimeoutRegen || GeneralConfig.enableBlankReturn) {
 						/* 1.16.1 code; AKA the only thing that changed  */
 						// TODO build a 1.15 version of this
-						if (TEMPBOOLPLSREMOVE) {
+						if (GeneralConfig.enableBlankReturn) {
 							// Generate a new empty chunk
-							Chunk out = new Chunk(scp.world, new ChunkPos(chunkpos), new BiomeContainer(scp.world.func_241828_r().func_243612_b(Registry.BIOME_KEY), new Biome[0]));
+							MutableRegistry<Biome> biomeRegistry = scp.world.func_241828_r().func_243612_b(Registry.BIOME_KEY);
+							BiomeProvider bp = new SingleBiomeProvider(biomeRegistry.getByValue(0));
+							Chunk out = new Chunk(scp.world, new ChunkPos(chunkpos), 
+									new BiomeContainer(biomeRegistry, new ChunkPos(chunkpos), bp));
 							// SCIENCE
 							completableFuture.complete(Either.left(out));
 						} else
