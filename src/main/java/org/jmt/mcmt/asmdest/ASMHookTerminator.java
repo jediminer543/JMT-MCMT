@@ -31,7 +31,6 @@ import org.jmt.mcmt.paralelised.GatedLock;
 import org.jmt.mcmt.serdes.SerDesHookTypes;
 import org.jmt.mcmt.serdes.SerDesRegistry;
 import org.jmt.mcmt.serdes.filter.ISerDesFilter;
-import org.jmt.mcmt.serdes.pools.PostExecutePool;
 
 import net.minecraft.block.BlockEventData;
 import net.minecraft.entity.Entity;
