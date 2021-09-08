@@ -48,9 +48,6 @@ public class GeneralConfig {
 	// World
 	public static boolean disableWorld;
 	public static boolean disableWorldPostTick;
-	
-	//WorldChunk
-	public static boolean disableMultiChunk;
 
 	// Entity
 	public static boolean disableEntity;
@@ -74,7 +71,6 @@ public class GeneralConfig {
 	//Debug
 	public static boolean enableChunkTimeout;
 	public static boolean enableTimeoutRegen;
-	public static boolean enableBlankReturn;
 	public static int timeoutCount;
 	
 	// More Debug
@@ -143,8 +139,6 @@ public class GeneralConfig {
 		disableWorld = GENERAL.disableWorld.get();
 		disableWorldPostTick = GENERAL.disableWorldPostTick.get();
 		
-		disableMultiChunk = GENERAL.disableMultiChunk.get();
-		
 		disableEntity = GENERAL.disableEntity.get();
 		disableTileEntity = GENERAL.disableTileEntity.get();
 		disableEnvironment = GENERAL.disableEnvironment.get();
@@ -153,7 +147,6 @@ public class GeneralConfig {
 		
 		enableChunkTimeout = GENERAL.enableChunkTimeout.get();
 		enableTimeoutRegen = GENERAL.enableTimeoutRegen.get();
-		enableBlankReturn = GENERAL.enableBlankReturn.get();
 		timeoutCount = GENERAL.timeoutCount.get();
 		
 		opsTracing = GENERAL.opsTracing.get();
@@ -195,8 +188,6 @@ public class GeneralConfig {
 		GENERAL.disableWorld.set(disableWorld);
 		GENERAL.disableWorldPostTick.set(disableWorldPostTick);
 		
-		GENERAL.disableMultiChunk.set(disableMultiChunk);
-		
 		GENERAL.disableEntity.set(disableEntity);
 		GENERAL.disableTileEntity.set(disableTileEntity);
 		GENERAL.disableEnvironment.set(disableEnvironment);
@@ -205,7 +196,6 @@ public class GeneralConfig {
 		
 		GENERAL.enableChunkTimeout.set(enableChunkTimeout);
 		GENERAL.enableTimeoutRegen.set(enableTimeoutRegen);
-		GENERAL.enableBlankReturn.set(enableBlankReturn);
 		GENERAL.timeoutCount.set(timeoutCount);
 		
 		GENERAL.opsTracing.set(opsTracing);
@@ -234,8 +224,6 @@ public class GeneralConfig {
 		public final BooleanValue disableWorld;
 		public final BooleanValue disableWorldPostTick;
 		
-		public final BooleanValue disableMultiChunk;
-		
 		public final BooleanValue disableEntity;
 		
 		public final BooleanValue disableTileEntity;
@@ -248,7 +236,6 @@ public class GeneralConfig {
 		public final BooleanValue disableChunkProvider;
 		public final BooleanValue enableChunkTimeout;
 		public final BooleanValue enableTimeoutRegen;
-		public final BooleanValue enableBlankReturn;
 		public final IntValue timeoutCount;
 		
 		public final BooleanValue opsTracing;
@@ -283,11 +270,6 @@ public class GeneralConfig {
 			disableWorldPostTick = builder
 					.comment("Disable world post tick parallelisation")
 					.define("disableWorldPostTick", false);
-			builder.push("chunk");
-			disableMultiChunk = builder
-					.comment("Disable world prallel chunk loading")
-					.define("disableMultiChunk", true);
-			builder.pop();
 			builder.pop();
 			builder.push("entity");
 			disableEntity = builder
@@ -333,9 +315,6 @@ public class GeneralConfig {
 			enableTimeoutRegen = builder
 					.comment("Attempts to re-load timed out chunks; Seems to work")
 					.define("enableTimeoutReload", false);
-			enableBlankReturn = builder
-					.comment("Simply returns a new empty chunk instead of a re-generating fully")
-					.define("enableBlankReturn", false);
 			timeoutCount = builder
 					.comment("Amount of workless iterations to wait before declaring a chunk load attempt as timed out\n"
 							+"This is in ~100us itterations (plus minus yield time) so timeout >= timeoutCount*100us")

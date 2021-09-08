@@ -104,11 +104,7 @@ public class SerDesConfig {
 		}
 
 		public Map<String, Object> getPoolParams() {
-			try {
-				return poolParams.valueMap();
-			} catch (java.lang.NullPointerException npe) {
-				return new HashMap<String, Object>();
-			}
+			return poolParams.valueMap();
 		}
 	}
 	

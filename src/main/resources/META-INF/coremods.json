@@ -4,7 +4,6 @@
   "envparallel": "trans/envparallel.js",
   "etpparallel": "trans/etpparallel.js",
   "teparallel": "trans/teparallel.js",
-  "chunkparallel": "trans/chunkparallel.js",
   "scpcoaccess": "trans/general/scpcoaccess.js",
   "generalparallel": "trans/general/generalparallel.js",
   "gen2parallel": "trans/general/gen2parallel.js",
