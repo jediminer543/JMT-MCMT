@@ -28,6 +28,8 @@ import org.jmt.mcmt.serdes.filter.PistonFilter;
 import org.jmt.mcmt.serdes.filter.VanillaFilter;
 import org.jmt.mcmt.serdes.pools.ChunkLockPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool;
+import org.jmt.mcmt.serdes.pools.PostExecutePool;
+import org.jmt.mcmt.serdes.pools.SingleExecutionPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool.ISerDesOptions;
 import org.jmt.mcmt.serdes.pools.MainThreadExecutionPool;
 import org.jmt.mcmt.serdes.pools.UnaryExecutionPool;
@@ -165,7 +167,8 @@ public class SerDesRegistry {
 		ISerDesPool chunkLockPool = getOrCreatePool("CHUNK_LOCK", ChunkLockPool::new);
 		registry.put("LEGACY", chunkLockPool); // copy the CHUNK_LOCK pool to the LEGACY entry so they share the same pool object
 		getOrCreatePool("MAIN", MainThreadExecutionPool::new);
-		getOrCreatePool("UNARY", UnaryExecutionPool::new);
+		getOrCreatePool("SINGLE", UnaryExecutionPool::new);
+		getOrCreatePool("POST", ()->PostExecutePool.POOL);
 		// LOADED FROM CONFIG
 		List<PoolConfig> pcl = SerDesConfig.getPools();
 		if (pcl != null) for (PoolConfig pc : pcl) {

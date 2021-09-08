@@ -23,7 +23,7 @@ function toParallelHashSets(methodNode) {
 	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
 	var MethodType = asmapi.MethodType;
 	var instructions = methodNode.instructions;
-	
+		
 	var callMethod = "newHashSet";
 	var callClass = "com/google/common/collect/Sets";
 	var callDesc = "()Ljava/util/HashSet;";
@@ -35,6 +35,7 @@ function toParallelHashSets(methodNode) {
 	var invoke = asmapi.findFirstMethodCallAfter(methodNode, MethodType.STATIC, callClass, callMethod, callDesc, 0);
 	if (invoke != null) {
 		do {
+			asmapi.log("INFO", "[JMTSUPERTRANS] toParallelHashSets Transforming");
 			invoke.owner = tgtClass;
 			invoke.name = tgtMethod;
 			invoke.desc = tgtDesc;
@@ -59,6 +60,7 @@ function toParallelHashMaps(methodNode) {
 	var invoke = asmapi.findFirstMethodCallAfter(methodNode, MethodType.STATIC, callClass, callMethod, callDesc, 0);
 	if (invoke != null) {
 		do {
+			asmapi.log("INFO", "[JMTSUPERTRANS] toParallelHashMaps Transforming");
 			invoke.owner = tgtClass;
 			invoke.name = tgtMethod;
 			invoke.desc = tgtDesc;
@@ -84,6 +86,7 @@ function toParallelDeque(methodNode) {
 	var invoke = asmapi.findFirstMethodCallAfter(methodNode, MethodType.STATIC, callClass, callMethod, callDesc, 0);
 	if (invoke != null) {
 		do {
+			asmapi.log("INFO", "[JMTSUPERTRANS] toParallelHashSets Transforming");
 			invoke.owner = tgtClass;
 			invoke.name = tgtMethod;
 			invoke.desc = tgtDesc;
@@ -443,14 +446,81 @@ function initializeCoreMod() {
         		"methodDesc": "(Lnet/minecraft/resources/IResourceManager;Lnet/minecraft/world/storage/SaveFormat$LevelSave;Lcom/mojang/datafixers/DataFixer;)V"
             },
             "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] TemplateManagerHashMap Transformer Called");
+				var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	asmapi.log("INFO", "[JMTSUPERTRANS] TemplateManagerHashMap Transformer Called");
             	
             	toParallelHashMaps(methodNode);
             	
-            	print("[JMTSUPERTRANS] TemplateManagerHashMap Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] TemplateManagerHashMap Transformer Complete");
             	
             	return methodNode;
             }
     	},
+		'TicketManagerCollections': {
+			'target': {
+                'type': 'CLASS',
+                'name': 'net.minecraft.world.server.TicketManager'
+            },
+            "transformer": function(classNode) {
+	            var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	asmapi.log("INFO", "[JMTSUPERTRANS] TicketManagerCollections Transformer Called");
+            	
+				for (methodid in classNode.methods) {
+					var methodNode = classNode.methods[methodid];
+					if (methodNode.name != "<init>") {
+    					continue;
+    				}
+					asmapi.log("INFO", "[JMTSUPERTRANS] TicketManagerCollections Hit Init");
+					/*
+					var insn = methodNode.instructions.getFirst();
+					while (insn != null) {
+						printInsnNode(insn);
+						insn = insn.getNext();
+					}
+					*/
+					toParallelHashMaps(methodNode);
+					toParallelDeque(methodNode);
+					toParallelHashSets(methodNode);
+				}
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] TicketManagerCollections Transformer Complete");
+            	
+            	return classNode;
+            }
+		},
+		'ThreadTaskExecutorCollections': {
+			'target': {
+                'type': 'CLASS',
+                'name': 'net.minecraft.util.concurrent.ThreadTaskExecutor'
+            },
+            "transformer": function(classNode) {
+	            var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ThreadTaskExecutorCollections Transformer Called");
+            	
+				for (methodid in classNode.methods) {
+					var methodNode = classNode.methods[methodid];
+					if (methodNode.name != "<init>") {
+    					continue;
+    				}
+					asmapi.log("INFO", "[JMTSUPERTRANS] ThreadTaskExecutorCollections Hit Init");
+					/*
+					var insn = methodNode.instructions.getFirst();
+					while (insn != null) {
+						printInsnNode(insn);
+						insn = insn.getNext();
+					}
+					*/
+					toParallelHashMaps(methodNode);
+					toParallelDeque(methodNode);
+					toParallelHashSets(methodNode);
+				}
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ThreadTaskExecutorCollections Transformer Complete");
+            	
+            	return classNode;
+            }
+		}
+		
+		
     }
 }
