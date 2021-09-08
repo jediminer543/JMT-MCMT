@@ -1,6 +1,7 @@
 package org.jmt.mcmt.serdes.filter;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -12,16 +13,17 @@ import net.minecraft.world.World;
 
 public interface ISerDesFilter {
 
-	public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType);
+	public void serialise(Runnable task, Object obj, BlockPos bp, World w, 
+			Consumer<Runnable> executeMultithreaded, ISerDesHookType hookType);
 	
 	@Nullable
-	public default Set<Class<?>> getTargets() {
+	public default Set<Class<?>> getFiltered() {
 		return null;
 	}
 	
 	/**
 	 * Perform initialisation; this may include optimisation steps like looking up 
-	 * pools pre-emptively, generating pook configs, etc.
+	 * pools pre-emptively, generating pool configs, etc.
 	 * 
 	 * As such it is invoked after pools are initialised
 	 */
@@ -30,13 +32,13 @@ public interface ISerDesFilter {
 	}
 	
 	@Nullable
-	public default Set<Class<?>> getWhitelist() {
+	public default Set<Class<?>> getAlwaysAsync() {
 		return null;
 	}
 	
 	public static enum ClassMode {
-		BLACKLIST,
-		WHITELIST,
+		FILTERED,
+		ALWAYS_ASYNC,
 		UNKNOWN;
 	}
 	

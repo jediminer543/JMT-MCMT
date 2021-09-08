@@ -147,19 +147,17 @@ public class StatsCommand {
 								maxThreads[currentPos] = 0;
 							}
 							int total = 0;
-							int worlds = ASMHookTerminator.currentWorlds.get();
+							int worldTicks = ASMHookTerminator.worldExecutionStack.size();
 							maxWorlds[currentPos] = Math.max(maxWorlds[currentPos],
-									worlds);
-							int tes = ASMHookTerminator.currentTEs.get();
-							maxTEs[currentPos] = Math.max(maxTEs[currentPos], tes);
-							int entities = ASMHookTerminator.currentEnts.get();
+									worldTicks);
+							int environmentTicks = ASMHookTerminator.currentEnvs.get();
+							int tileEntityTicks = ASMHookTerminator.currentTEs.get();
+							maxTEs[currentPos] = Math.max(maxTEs[currentPos], tileEntityTicks);
+							int entityTicks = ASMHookTerminator.entityExecutionStack.size();
 							maxEntities[currentPos] = Math.max(maxEntities[currentPos],
-									entities);
-							int envs = ASMHookTerminator.currentEnvs.get();
-							maxEnvs[currentPos] = Math.max(maxEnvs[currentPos], envs);
-							total = worlds+tes+entities+envs;
+									entityTicks);
+							total = worldTicks+tileEntityTicks+entityTicks+environmentTicks;
 							maxThreads[currentPos] = Math.max(maxThreads[currentPos], total);
-									
 						}
 						if (mcs != null && !mcs.isServerRunning()) {
 							doLogging = false;

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import org.jmt.mcmt.config.SerDesConfig;
@@ -71,12 +72,12 @@ public class GenericConfigFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public Set<Class<?>> getWhitelist() {
+	public Set<Class<?>> getAlwaysAsync() {
 		return whitelist;
 	}
 	
 	@Override
-	public Set<Class<?>> getTargets() {
+	public Set<Class<?>> getFiltered() {
 		return blacklist;
 	}
 	
@@ -84,20 +85,21 @@ public class GenericConfigFilter implements ISerDesFilter {
 	public ClassMode getModeOnline(Class<?> c) {
 		if (regexBlacklist != null) {
 			if (regexBlacklist.matcher(c.getName()).find()) {
-				return ClassMode.BLACKLIST;
+				return ClassMode.FILTERED;
 			}
 		}
 		if (regexWhitelist != null) {
 			if (regexWhitelist.matcher(c.getName()).find()) {
-				return ClassMode.WHITELIST;
+				return ClassMode.ALWAYS_ASYNC;
 			}
 		}
 		return ClassMode.UNKNOWN;
 	}
 	
 	@Override
-	public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType) {
-		primePool.serialise(task, hookType, bp, w, primeOpts);
+	public void serialise(Runnable task, Object obj, BlockPos bp, World w,
+			Consumer<Runnable> executeMultithreaded, ISerDesHookType hookType) {
+		primePool.serialise(task, hookType, bp, w, executeMultithreaded, primeOpts);
 	}
 
 }

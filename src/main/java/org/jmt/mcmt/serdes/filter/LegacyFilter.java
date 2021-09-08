@@ -3,6 +3,7 @@ package org.jmt.mcmt.serdes.filter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.jmt.mcmt.config.GeneralConfig;
 import org.jmt.mcmt.serdes.ISerDesHookType;
@@ -28,17 +29,18 @@ public class LegacyFilter implements ISerDesFilter {
 	}
 	
 	@Override
-	public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType) {
-		clp.serialise(task, obj, bp, w, config);
+	public void serialise(Runnable task, Object obj, BlockPos bp, World w, 
+			Consumer<Runnable> executeMultithreaded, ISerDesHookType hookType) {
+		clp.serialise(task, obj, bp, w, executeMultithreaded, config);
 	}
 	
 	@Override
-	public Set<Class<?>> getTargets() {
+	public Set<Class<?>> getFiltered() {
 		return GeneralConfig.teBlackList;
 	}
 	
 	@Override
-	public Set<Class<?>> getWhitelist() {
+	public Set<Class<?>> getAlwaysAsync() {
 		return GeneralConfig.teWhiteList;
 	}
 

@@ -3,12 +3,14 @@ package org.jmt.mcmt.serdes;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -26,11 +28,9 @@ import org.jmt.mcmt.serdes.filter.PistonFilter;
 import org.jmt.mcmt.serdes.filter.VanillaFilter;
 import org.jmt.mcmt.serdes.pools.ChunkLockPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool;
-import org.jmt.mcmt.serdes.pools.PostExecutePool;
-import org.jmt.mcmt.serdes.pools.SingleExecutionPool;
 import org.jmt.mcmt.serdes.pools.ISerDesPool.ISerDesOptions;
-
-import com.google.common.collect.Lists;
+import org.jmt.mcmt.serdes.pools.MainThreadExecutionPool;
+import org.jmt.mcmt.serdes.pools.UnaryExecutionPool;
 
 import net.minecraft.tileentity.PistonTileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -46,15 +46,15 @@ public class SerDesRegistry {
 	private static final Logger LOGGER = LogManager.getLogger(); 
 	private static final Map<Class<?>, ISerDesFilter> EMPTYMAP = new ConcurrentHashMap<Class<?>, ISerDesFilter>();
 	private static final Set<Class<?>> EMPTYSET = ConcurrentHashMap.newKeySet();
-	
+
 	static Map<ISerDesHookType, Map<Class<?>, ISerDesFilter>> optimisedLookup;
 	static Map<ISerDesHookType, Set<Class<?>>> whitelist;
 	static Set<Class<?>> unknown;
-	
+
 	static ArrayList<ISerDesFilter> filters;
-	
+
 	static Set<ISerDesHookType> hookTypes;
-	
+
 	static {
 		filters = new ArrayList<ISerDesFilter>();
 		optimisedLookup = new ConcurrentHashMap<ISerDesHookType, Map<Class<?>,ISerDesFilter>>();
@@ -66,16 +66,16 @@ public class SerDesRegistry {
 			hookTypes.add(isdh);
 		}
 	}
-	
+
 	private static final ISerDesFilter DEFAULT_FILTER = new DefaultFilter();
-	
+
 	public static void init() {
 		SerDesConfig.loadConfigs();
 		initPools();
 		initFilters();
 		initLookup();
 	}
-	
+
 	public static void initFilters() {
 		filters.clear();
 		// High Priority (I.e. non overridable)
@@ -94,12 +94,12 @@ public class SerDesRegistry {
 			sdf.init();
 		}
 	}
-	
+
 	public static void initLookup() {
 		optimisedLookup.clear();
 		for (ISerDesFilter f : filters) {
-			Set<Class<?>> rawTgt = f.getTargets();
-			Set<Class<?>> rawWl  = f.getWhitelist();
+			Set<Class<?>> rawTgt = f.getFiltered();
+			Set<Class<?>> rawWl  = f.getAlwaysAsync();
 			if (rawTgt == null) rawTgt = ConcurrentHashMap.newKeySet();
 			if (rawWl  == null) rawWl  = ConcurrentHashMap.newKeySet();
 			Map<ISerDesHookType, Set<Class<?>>> whitelist = group(rawWl);
@@ -117,7 +117,7 @@ public class SerDesRegistry {
 			}
 		}
 	}
-	
+
 	public static Map<ISerDesHookType, Set<Class<?>>> group(Set<Class<?>> set) {
 		Map<ISerDesHookType, Set<Class<?>>> out = new ConcurrentHashMap<ISerDesHookType, Set<Class<?>>>();
 		for (Class<?> i : set) {
@@ -129,24 +129,24 @@ public class SerDesRegistry {
 		}
 		return out;
 	}
-	
+
 	public static ISerDesFilter getFilter(ISerDesHookType isdh, Class<?> clazz) {
 		if (whitelist.getOrDefault(isdh, EMPTYSET).contains(clazz)) {
 			return null;
 		}
 		return optimisedLookup.getOrDefault(isdh, EMPTYMAP).getOrDefault(clazz, DEFAULT_FILTER);
 	}
-	
+
 	static Map<String, ISerDesPool> registry = new ConcurrentHashMap<String, ISerDesPool>();
-	
+
 	public static ISerDesPool getPool(String name) {
 		return registry.get(name);
 	}
-	
+
 	public static ISerDesPool getOrCreatePool(String name, Function<String, ISerDesPool> source) {
 		return registry.computeIfAbsent(name, source);
 	}
-	
+
 	public static ISerDesPool getOrCreatePool(String name, Supplier<ISerDesPool> source) {
 		return getOrCreatePool(name, i->{
 			ISerDesPool out = source.get();
@@ -154,17 +154,18 @@ public class SerDesRegistry {
 			return out;
 		});
 	}
-	
+
 	public static boolean removeFromWhitelist(ISerDesHookType isdh, Class<?> c) {
 		return whitelist.getOrDefault(isdh, EMPTYSET).remove(c);
 	}
-	
+
 	public static void initPools() {
 		registry.clear();
 		// HARDCODED DEFAULTS
-		getOrCreatePool("LEGACY", ChunkLockPool::new);
-		getOrCreatePool("SINGLE", SingleExecutionPool::new);
-		getOrCreatePool("POST", ()->PostExecutePool.POOL);
+		ISerDesPool chunkLockPool = getOrCreatePool("CHUNK_LOCK", ChunkLockPool::new);
+		registry.put("LEGACY", chunkLockPool); // copy the CHUNK_LOCK pool to the LEGACY entry so they share the same pool object
+		getOrCreatePool("MAIN", MainThreadExecutionPool::new);
+		getOrCreatePool("UNARY", UnaryExecutionPool::new);
 		// LOADED FROM CONFIG
 		List<PoolConfig> pcl = SerDesConfig.getPools();
 		if (pcl != null) for (PoolConfig pc : pcl) {
@@ -195,7 +196,7 @@ public class SerDesRegistry {
 			}
 		}
 	}
-	
+
 	public static class DefaultFilter implements ISerDesFilter {
 
 		//TODO make not shit
@@ -216,10 +217,10 @@ public class SerDesRegistry {
 			}
 			return isLocking;
 		}
-		
+
 		ISerDesPool clp;
 		ISerDesOptions config;
-		
+
 		@Override
 		public void init() {
 			clp = SerDesRegistry.getOrCreatePool("LEGACY", ChunkLockPool::new);
@@ -227,9 +228,10 @@ public class SerDesRegistry {
 			cfg.put("range", "1");
 			config = clp.compileOptions(cfg);
 		}
-		
+
 		@Override
-		public void serialise(Runnable task, Object obj, BlockPos bp, World w, ISerDesHookType hookType) {
+		public void serialise(Runnable task, Object obj, BlockPos bp, World w, 
+				Consumer<Runnable> multi, ISerDesHookType hookType) {
 			if (!unknown.contains(obj.getClass())) {
 				ClassMode mode = ClassMode.UNKNOWN;
 				for (ISerDesFilter isdf : filters) {
@@ -237,47 +239,45 @@ public class SerDesRegistry {
 					if (cm.compareTo(mode) < 0) {
 						mode = cm;
 					}
-					if (mode == ClassMode.BLACKLIST) {
+					if (mode == ClassMode.FILTERED) {
 						optimisedLookup.computeIfAbsent(hookType, 
 								i->new ConcurrentHashMap<Class<?>, ISerDesFilter>())
-								.put(obj.getClass(), isdf);
-						isdf.serialise(task, obj, bp, w, hookType);
+						.put(obj.getClass(), isdf);
+						isdf.serialise(task, obj, bp, w, multi, hookType);
 						return;
 					}
 				}
-				if (mode == ClassMode.WHITELIST) {
+				if (mode == ClassMode.ALWAYS_ASYNC) {
 					whitelist.computeIfAbsent(hookType, 
 							k->ConcurrentHashMap.newKeySet())
-						.add(obj.getClass());
-					task.run(); // Whitelist = run on thread
+					.add(obj.getClass());
+					multi.accept(task); // Whitelist = run on thread
 					return;
 				}
 				unknown.add(obj.getClass());
 			}
 			// TODO legacy behaviour please fix
 			if (hookType.equals(SerDesHookTypes.TETick) && filterTE(obj)) {
-				clp.serialise(task, obj, bp, w, config);
+				clp.serialise(task, obj, bp, w, multi, config);
 			} else {
-				try {
-					task.run();
-				} catch (Exception e) {
-					LOGGER.error("Exception running " + obj.getClass().getName() + " asynchronusly", e);
-					LOGGER.error("Adding " + obj.getClass().getName() + " to blacklist.");
-					SerDesConfig.createFilterConfig(
-							"auto-" + obj.getClass().getName(),
-							10,
-							Lists.newArrayList(),
-							Lists.newArrayList(obj.getClass().getName()),
-							null
-						);
-					
-					AutoFilter.singleton().addClassToBlacklist(obj.getClass());
-					// TODO: this could leave a tick in an incomplete state. should the full exception be thrown?
-					if (e instanceof RuntimeException) throw e;
-				}
+				multi.accept(() -> {
+					try {
+						task.run();
+					} catch (Exception e) {
+						LOGGER.error("Exception running " + obj.getClass().getName() + " asynchronusly", e);
+						removeFromWhitelist(hookType, obj.getClass());
+						// check to see if the UNARY pool is a better option for the generated filter
+						if (e instanceof ConcurrentModificationException) 
+							AutoFilter.singleton().addClassToBlacklist(obj.getClass(), "UNARY");
+						else
+							// default to CHUNK_LOCK pool (acceptable for most cases)
+							AutoFilter.singleton().addClassToBlacklist(obj.getClass());
+						// TODO: this could leave a tick in an incomplete state. should the full exception be thrown?
+						if (e instanceof RuntimeException) throw e;
+						throw new RuntimeException(e);
+					}
+				});
 			}
 		}
-		
-		
 	}
 }

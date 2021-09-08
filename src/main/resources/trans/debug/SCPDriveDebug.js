@@ -73,7 +73,7 @@ function initializeCoreMod() {
         		il.add(new VarInsnNode(opcodes.ALOAD, cfl));
         		il.add(new VarInsnNode(opcodes.LLOAD, 6));
         		il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
-        				"org/jmt/mcmt/asmdest/DebugHookTerminator", "chunkLoadDrive",
+        				"org/jmt/mcmt/asmdest/ChunkRepairHookTerminator", "chunkLoadDrive",
         				"(Lnet/minecraft/world/server/ServerChunkProvider$ChunkExecutor;Ljava/util/function/BooleanSupplier;Lnet/minecraft/world/server/ServerChunkProvider;Ljava/util/concurrent/CompletableFuture;J)V"        				,false));
         		il.add(new JumpInsnNode(opcodes.GOTO, skipTarget));
         		
@@ -134,7 +134,7 @@ function initializeCoreMod() {
         		
         		var il = new InsnList();
         		il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
-        				"org/jmt/mcmt/asmdest/DebugHookTerminator", "isBypassLoadTarget",
+        				"org/jmt/mcmt/asmdest/ChunkRepairHookTerminator", "isBypassLoadTarget",
         				"()Z"
         				,false));
         		il.add(new JumpInsnNode(opcodes.IFNE, labelTgt));
@@ -195,7 +195,7 @@ function initializeCoreMod() {
         		var il = new InsnList();
 				//il.add(new InsnNode(opcodes.DUP));
         		//il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
-        		//		"org/jmt/mcmt/asmdest/DebugHookTerminator", "checkNull",
+        		//		"org/jmt/mcmt/asmdest/ChunkRepairHookTerminator", "checkNull",
         		//		"(Ljava/lang/Object;)V", 
 				//		false));
         		
