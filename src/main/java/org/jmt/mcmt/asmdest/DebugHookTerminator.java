@@ -103,7 +103,7 @@ public class DebugHookTerminator {
 							// Generate a new empty chunk
 							// Null is legal here as it's literally not used
 							SingleBiomeProviderSettings sbps = new SingleBiomeProviderSettings(null);
-							sbps.setBiome(Biomes.DEFAULT);
+							sbps.setBiome(Registry.BIOME.getOrDefault(null));
 							BiomeProvider bp = new SingleBiomeProvider(sbps);
 							Chunk out = new Chunk(scp.world, new ChunkPos(chunkpos), 
 									new BiomeContainer(new ChunkPos(chunkpos), bp));
