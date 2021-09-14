@@ -278,7 +278,7 @@ public class GeneralConfig {
 			builder.push("chunk");
 			disableMultiChunk = builder
 					.comment("Disable world prallel chunk loading")
-					.define("disableMultiChunk", true);
+					.define("disableMultiChunk", false);
 			builder.pop();
 			builder.pop();
 			builder.push("entity");

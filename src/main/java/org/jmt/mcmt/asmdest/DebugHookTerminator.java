@@ -31,6 +31,10 @@ import net.minecraft.world.server.ChunkHolder;
 import net.minecraft.world.server.ChunkHolder.IChunkLoadingError;
 import net.minecraft.world.server.ServerChunkProvider;
 
+/* 1.15.2 code; AKA the only thing that changed  
+import net.minecraft.world.biome.provider.SingleBiomeProviderSettings;
+/* */
+
 // TODO Should be renamed ChunkRepairHookTerminator (Note requres coremod edit)
 /**
  * Handles chunk forcing in scenarios where world corruption has occured
@@ -83,9 +87,10 @@ public class DebugHookTerminator {
 					LOGGER.error("", new TimeoutException("Error fetching chunk " + chunkpos));	
 					bypassLoadTarget = true;
 					if (GeneralConfig.enableTimeoutRegen || GeneralConfig.enableBlankReturn) {
-						/* 1.16.1 code; AKA the only thing that changed  */
+						
 						// TODO build a 1.15 version of this
 						if (GeneralConfig.enableBlankReturn) {
+							/* 1.16.1 code; AKA the only thing that changed  */
 							// Generate a new empty chunk
 							MutableRegistry<Biome> biomeRegistry = scp.world.func_241828_r().func_243612_b(Registry.BIOME_KEY);
 							BiomeProvider bp = new SingleBiomeProvider(biomeRegistry.getByValue(0));
@@ -93,9 +98,19 @@ public class DebugHookTerminator {
 									new BiomeContainer(biomeRegistry, new ChunkPos(chunkpos), bp));
 							// SCIENCE
 							completableFuture.complete(Either.left(out));
-						} else
-						/* */
-						{
+							/* */
+							/* 1.15.2 code; AKA the only thing that changed  
+							// Generate a new empty chunk
+							// Null is legal here as it's literally not used
+							SingleBiomeProviderSettings sbps = new SingleBiomeProviderSettings(null);
+							sbps.setBiome(Registry.BIOME.getOrDefault(null));
+							BiomeProvider bp = new SingleBiomeProvider(sbps);
+							Chunk out = new Chunk(scp.world, new ChunkPos(chunkpos), 
+									new BiomeContainer(new ChunkPos(chunkpos), bp));
+							// SCIENCE
+							completableFuture.complete(Either.left(out));
+							/* */
+						} else {
 							try {
 								CompoundNBT cnbt = scp.chunkManager.readChunk(new ChunkPos(chunkpos));
 								if (cnbt != null) {
