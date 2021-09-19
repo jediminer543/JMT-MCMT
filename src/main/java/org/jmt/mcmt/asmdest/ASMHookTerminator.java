@@ -37,7 +37,12 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerTickList;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.ListenerList;
+import net.minecraftforge.eventbus.api.EventListenerHelper;
+import net.minecraftforge.eventbus.api.IEventListener;
 import net.minecraftforge.fml.CrashReportExtender;
+import net.minecraftforge.fml.LogicalSide;
 
 /**
  * This is where all current ASM hooks are terminated
@@ -156,23 +161,27 @@ public class ASMHookTerminator {
 					currentWorlds.incrementAndGet();
 					serverworld.tick(hasTimeLeft);
 					if (GeneralConfig.disableWorldPostTick) {
-						p.register();
-						ex.execute(() -> {
-							try {
-								//ForkJoinPool.managedBlock(
-								//		new RunnableManagedBlocker(() ->  { 
-												synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
-													net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-												}
-								//		}));
-							//} catch (InterruptedException e) {
-							//	e.printStackTrace();
-							} finally {
-								p.arriveAndDeregister();
-							}
-						});
+						synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
+							net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+						}
 					} else {
-						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+						TickEvent.WorldTickEvent event = new TickEvent.WorldTickEvent(LogicalSide.SERVER, TickEvent.Phase.END, serverworld);
+						ListenerList ll = EventListenerHelper.getListenerList(TickEvent.WorldTickEvent.class);
+						//TODO find better way to locate listeners
+						IEventListener[] listeners = ll.getListeners(0);
+						for (IEventListener iel : listeners) {
+							p.register();
+							ex.execute(() -> {
+								try {
+									synchronized (iel) {
+										iel.invoke(event);
+									}
+								} finally {
+									p.arriveAndDeregister();
+									currentWorlds.decrementAndGet();
+								}
+							});
+						}
 					}
 				} finally {
 					p.arriveAndDeregister();

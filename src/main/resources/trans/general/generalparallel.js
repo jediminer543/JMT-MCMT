@@ -209,6 +209,8 @@ function initializeCoreMod() {
             },
             "transformer": synchronizeMethod("ServerWorldOnBlockStateChange")
     	},
+		// Unsure as to justification for existance so disabling
+		/*
     	//processUpdates net.minecraft.world.lighting.LevelBasedGraph func_215483_b(I)I
     	'LevelBasedGraph-processUpdates': {
             'target': {
@@ -229,6 +231,7 @@ function initializeCoreMod() {
             },
             "transformer": synchronizeMethod("LevelBasedGraph-scheduleUpdate")
     	},
+		*/
     	'POIManager_func_219149_a_': {
             'target': {
                 'type': 'METHOD',
