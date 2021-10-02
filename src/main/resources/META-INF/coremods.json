@@ -1,0 +1,8 @@
+{
+  "worldparallel": "trans/worldparallel.js",
+  "entityparallel": "trans/entityparallel.js",
+  "envparallel": "trans/envparallel.js",
+  "etpparallel": "trans/etpparallel.js",
+  "teparallel": "trans/teparallel.js",
+  "chunkparallel": "trans/chunkparallel.js"
+}
