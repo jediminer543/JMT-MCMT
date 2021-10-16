@@ -1,7 +1,10 @@
 package org.jmt.mcmt.asmdest;
 
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +43,7 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.ListenerList;
 import net.minecraftforge.eventbus.api.EventListenerHelper;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventListener;
 import net.minecraftforge.fml.CrashReportExtender;
 import net.minecraftforge.fml.LogicalSide;
@@ -169,18 +173,40 @@ public class ASMHookTerminator {
 						ListenerList ll = EventListenerHelper.getListenerList(TickEvent.WorldTickEvent.class);
 						//TODO find better way to locate listeners
 						IEventListener[] listeners = ll.getListeners(0);
+						//TODO Add some way to cache listeners because this is
+						//Janky and slow
+						Map<EventPriority, List<IEventListener>> prioritymap = new HashMap<EventPriority, List<IEventListener>>();
+						EventPriority current = EventPriority.HIGHEST;
+						prioritymap.computeIfAbsent(current, i->new ArrayList<>());
 						for (IEventListener iel : listeners) {
-							p.register();
-							ex.execute(() -> {
-								try {
-									synchronized (iel) {
-										iel.invoke(event);
-									}
-								} finally {
-									p.arriveAndDeregister();
-									currentWorlds.decrementAndGet();
+							if (iel instanceof EventPriority) {
+								EventPriority newcurrent = (EventPriority) iel;
+								// Shouldn't be absent but if exists then drop
+								prioritymap.computeIfAbsent(newcurrent, i->new ArrayList<>());
+								//List<IEventListener> iell = prioritymap.computeIfAbsent(newcurrent, i->new ArrayList<>());
+								//iell.add(current); May break stuff so avoided;
+								current = newcurrent;
+							} else {
+								prioritymap.get(current).add(iel);
+							}
+						}
+						for (EventPriority ep : EventPriority.values()) {
+							List<IEventListener> iell = prioritymap.get(ep);
+							if (iell != null) {
+								ep.invoke(event);
+								for (IEventListener iel : iell) {
+									p.register();
+									ex.execute(() -> {
+										try {
+											synchronized (iel) {
+												iel.invoke(event);
+											}
+										} finally {
+											p.arriveAndDeregister();
+										}
+									});
 								}
-							});
+							}
 						}
 					}
 				} finally {
