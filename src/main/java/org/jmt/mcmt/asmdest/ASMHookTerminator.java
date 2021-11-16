@@ -121,12 +121,16 @@ public class ASMHookTerminator {
 	public static boolean serverExecutionThreadPatch(MinecraftServer ms) {
 		return isThreadPooled("MCMT", Thread.currentThread());
 	}
+	
+	static long tickStart = 0;
+	
 
 	public static void preTick(MinecraftServer server) {
 		if (p != null) {
 			LOGGER.warn("Multiple servers?");
 			return;
 		} else {
+			tickStart = System.nanoTime();
 			isTicking.set(true);
 			p = new Phaser();
 			p.register();
@@ -344,6 +348,10 @@ public class ASMHookTerminator {
 		}
 	}
 	
+	public static long[] lastTickTime = new long[32];
+	public static int lastTickTimePos = 0;
+	public static int lastTickTimeFill = 0;
+	
 	public static void postTick(MinecraftServer server) {
 		if (mcs != server) {
 			LOGGER.warn("Multiple servers?");
@@ -360,6 +368,9 @@ public class ASMHookTerminator {
 				r.run();
 				qi.remove();
 			}
+			lastTickTime[lastTickTimePos] = System.nanoTime() - tickStart;
+			lastTickTimePos = (lastTickTimePos+1)%lastTickTime.length;
+			lastTickTimeFill = Math.min(lastTickTimeFill+1, lastTickTime.length-1);
 		}
 	}
 	

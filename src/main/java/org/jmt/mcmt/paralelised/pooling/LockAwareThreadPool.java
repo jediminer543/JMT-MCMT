@@ -20,6 +20,8 @@ public class LockAwareThreadPool extends AbstractExecutorService {
 	private ConcurrentLinkedDeque<Runnable> taskQueue;
 	private Map<LockAwareThread, LockAwareThreadState> threadSet = new ConcurrentHashMap<>();
 	
+	private Object waitPoint = new Object();
+	
 	public enum LockAwareThreadState {
 		PARK,
 		RUN,
@@ -38,7 +40,17 @@ public class LockAwareThreadPool extends AbstractExecutorService {
 					blockedThreads.decrementAndGet();
 				}
 				if (state == LockAwareThreadState.PARK) {
-					
+					try {
+						synchronized (waitPoint) {
+							waitPoint.wait();
+						}
+					} catch (InterruptedException ie) {
+						//Don't care we like interupts
+					}
+				}
+				if (state == LockAwareThreadState.RUN) {
+					Runnable task = taskQueue.getFirst();
+					task.run();
 				}
 			}
 		}
