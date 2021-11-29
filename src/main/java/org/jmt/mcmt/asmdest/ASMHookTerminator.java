@@ -1,7 +1,10 @@
 package org.jmt.mcmt.asmdest;
 
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +40,13 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerTickList;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.ListenerList;
+import net.minecraftforge.eventbus.api.EventListenerHelper;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.IEventListener;
 import net.minecraftforge.fml.CrashReportExtender;
+import net.minecraftforge.fml.LogicalSide;
 
 /**
  * This is where all current ASM hooks are terminated
@@ -112,12 +121,16 @@ public class ASMHookTerminator {
 	public static boolean serverExecutionThreadPatch(MinecraftServer ms) {
 		return isThreadPooled("MCMT", Thread.currentThread());
 	}
+	
+	static long tickStart = 0;
+	
 
 	public static void preTick(MinecraftServer server) {
 		if (p != null) {
 			LOGGER.warn("Multiple servers?");
 			return;
 		} else {
+			tickStart = System.nanoTime();
 			isTicking.set(true);
 			p = new Phaser();
 			p.register();
@@ -156,23 +169,49 @@ public class ASMHookTerminator {
 					currentWorlds.incrementAndGet();
 					serverworld.tick(hasTimeLeft);
 					if (GeneralConfig.disableWorldPostTick) {
-						p.register();
-						ex.execute(() -> {
-							try {
-								//ForkJoinPool.managedBlock(
-								//		new RunnableManagedBlocker(() ->  { 
-												synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
-													net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
-												}
-								//		}));
-							//} catch (InterruptedException e) {
-							//	e.printStackTrace();
-							} finally {
-								p.arriveAndDeregister();
-							}
-						});
+						synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) {
+							net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+						}
 					} else {
-						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld);
+						TickEvent.WorldTickEvent event = new TickEvent.WorldTickEvent(LogicalSide.SERVER, TickEvent.Phase.END, serverworld);
+						ListenerList ll = EventListenerHelper.getListenerList(TickEvent.WorldTickEvent.class);
+						//TODO find better way to locate listeners
+						IEventListener[] listeners = ll.getListeners(0);
+						//TODO Add some way to cache listeners because this is
+						//Janky and slow
+						Map<EventPriority, List<IEventListener>> prioritymap = new HashMap<EventPriority, List<IEventListener>>();
+						EventPriority current = EventPriority.HIGHEST;
+						prioritymap.computeIfAbsent(current, i->new ArrayList<>());
+						for (IEventListener iel : listeners) {
+							if (iel instanceof EventPriority) {
+								EventPriority newcurrent = (EventPriority) iel;
+								// Shouldn't be absent but if exists then drop
+								prioritymap.computeIfAbsent(newcurrent, i->new ArrayList<>());
+								//List<IEventListener> iell = prioritymap.computeIfAbsent(newcurrent, i->new ArrayList<>());
+								//iell.add(current); May break stuff so avoided;
+								current = newcurrent;
+							} else {
+								prioritymap.get(current).add(iel);
+							}
+						}
+						for (EventPriority ep : EventPriority.values()) {
+							List<IEventListener> iell = prioritymap.get(ep);
+							if (iell != null) {
+								ep.invoke(event);
+								for (IEventListener iel : iell) {
+									p.register();
+									ex.execute(() -> {
+										try {
+											synchronized (iel) {
+												iel.invoke(event);
+											}
+										} finally {
+											p.arriveAndDeregister();
+										}
+									});
+								}
+							}
+						}
 					}
 				} finally {
 					p.arriveAndDeregister();
@@ -309,6 +348,10 @@ public class ASMHookTerminator {
 		}
 	}
 	
+	public static long[] lastTickTime = new long[32];
+	public static int lastTickTimePos = 0;
+	public static int lastTickTimeFill = 0;
+	
 	public static void postTick(MinecraftServer server) {
 		if (mcs != server) {
 			LOGGER.warn("Multiple servers?");
@@ -325,6 +368,9 @@ public class ASMHookTerminator {
 				r.run();
 				qi.remove();
 			}
+			lastTickTime[lastTickTimePos] = System.nanoTime() - tickStart;
+			lastTickTimePos = (lastTickTimePos+1)%lastTickTime.length;
+			lastTickTimeFill = Math.min(lastTickTimeFill+1, lastTickTime.length-1);
 		}
 	}
 	

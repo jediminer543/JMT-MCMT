@@ -11,6 +11,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntSortedMap;
 import it.unimi.dsi.fastutil.longs.LongComparator;
 import it.unimi.dsi.fastutil.longs.LongSortedSet;
 
+@SuppressWarnings("deprecation")
 public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMap {
 
 	/**
