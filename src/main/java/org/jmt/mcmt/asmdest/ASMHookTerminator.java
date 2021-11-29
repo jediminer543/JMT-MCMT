@@ -32,8 +32,10 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerTickList;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.TickingBlockEntity;
+import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.ListenerList;
@@ -281,11 +283,9 @@ public class ASMHookTerminator {
 		if (isLocking && GeneralConfig.teWhiteList.contains(tte.getClass())) {
 			isLocking = false;
 		}
-		/*
-		if (tte instanceof PistonTileEntity) {
+		if (tte instanceof PistonMovingBlockEntity) {
 			isLocking = true;
 		}
-		*/
 		return isLocking;
 	}
 		
@@ -307,12 +307,12 @@ public class ASMHookTerminator {
 				final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
 				currentTEs.incrementAndGet();
 				if (filter != null) {
-					filter.serialise(tte::tick, tte, ((BlockEntity)tte).getBlockPos(), world, SerDesHookTypes.TETick);
+					filter.serialise(tte::tick, tte, tte.getPos(), world, SerDesHookTypes.TETick);
 				} else {
 					tte.tick();
 				}
 			} catch (Exception e) {
-				System.err.println("Exception ticking TE at " + ((BlockEntity) tte).getBlockPos());
+				System.err.println("Exception ticking TE at " + tte.getPos());
 				e.printStackTrace();
 			} finally {
 				currentTEs.decrementAndGet();
@@ -393,12 +393,14 @@ public class ASMHookTerminator {
 	static {
 		net.minecraftforge.fmllegacy.CrashReportExtender.registerCrashCallable("MCMT", ASMHookTerminator::populateCrashReport);
 	}
-		
+	*/
+	
 	public static <T> void fixSTL(ServerTickList<T> stl) {
 		LOGGER.debug("FixSTL Called");
-		stl.pendingTickListEntriesTreeSet.addAll(stl.pendingTickListEntriesHashSet);
+		//stl.pendingTickListEntriesTreeSet.addAll(stl.pendingTickListEntriesHashSet);
+		stl.tickNextTickList.addAll(stl.tickNextTickSet);
 	}
-	*/
+	
 	
 	public static boolean shouldThreadChunks() {
 		return GeneralConfig.disableMultiChunk;

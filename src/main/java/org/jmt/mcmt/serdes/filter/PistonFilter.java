@@ -13,6 +13,7 @@ import org.jmt.mcmt.serdes.pools.ISerDesPool.ISerDesOptions;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
 
 public class PistonFilter implements ISerDesFilter {
 
@@ -36,7 +37,7 @@ public class PistonFilter implements ISerDesFilter {
 	@Override
 	public Set<Class<?>> getTargets() {
 		Set<Class<?>> out = new HashSet<Class<?>>();
-		//out.add(PistonTileEntity.class);
+		out.add(PistonMovingBlockEntity.class);
 		return out;
 	}
 

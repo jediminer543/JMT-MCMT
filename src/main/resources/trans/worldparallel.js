@@ -91,7 +91,7 @@ function initializeCoreMod() {
             		il.add(new VarInsnNode(opcodes.ALOAD, 0));
             		il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
             				"org/jmt/mcmt/asmdest/ASMHookTerminator", "callTick",
-            				"(Lnet/minecraft/world/server/ServerWorld;Ljava/util/function/BooleanSupplier;Lnet/minecraft/server/MinecraftServer;)V" ,false));
+            				"(Lnet/minecraft/server/level/ServerLevel;Ljava/util/function/BooleanSupplier;Lnet/minecraft/server/MinecraftServer;)V" ,false));
             		il.add(new JumpInsnNode(opcodes.GOTO, skipTarget));
             		
             		instructions.insertBefore(callTarget, il);

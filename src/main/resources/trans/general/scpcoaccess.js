@@ -5,7 +5,7 @@ function initializeCoreMod() {
     		//
     		'target': {
     			'type': 'CLASS',
-                'name': 'net.minecraft.util.Util'
+                'name': 'net.minecraft.Util'
     		},
     		"transformer": function(classNode) {
     			var opcodes = Java.type('org.objectweb.asm.Opcodes');
@@ -53,9 +53,11 @@ function initializeCoreMod() {
     	'SCPGetChunkPatch': {
             'target': {
                 'type': 'METHOD',
-                'class': 'net.minecraft.world.server.ServerChunkProvider',
-                "methodName": "func_212849_a_",
-        		"methodDesc": "(IILnet/minecraft/world/chunk/ChunkStatus;Z)Lnet/minecraft/world/chunk/IChunk;"
+                'class': 'net.minecraft.server.level.ServerChunkCache',
+                "methodName": "m_7587_",
+				//net.minecraft.world.level.chunk.ChunkStatus
+				//net.minecraft.world.level.chunk.ChunkAccess
+        		"methodDesc": "(IILnet/minecraft/world/level/chunk/ChunkStatus;Z)Lnet/minecraft/world/level/chunk/ChunkAccess;"
             },
             "transformer": function(methodNode) {
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
@@ -84,9 +86,9 @@ function initializeCoreMod() {
     	'SCPGetChunkNowPatch': {
             'target': {
                 'type': 'METHOD',
-                'class': 'net.minecraft.world.server.ServerChunkProvider',
-                "methodName": "func_225313_a",
-        		"methodDesc": "(II)Lnet/minecraft/world/chunk/Chunk;"
+                'class': 'net.minecraft.server.level.ServerChunkCache',
+                "methodName": "m_7131_",
+        		"methodDesc": "(II)Lnet/minecraft/world/level/chunk/LevelChunk;"
             },
             "transformer": function(methodNode) {
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');

@@ -96,8 +96,8 @@ function initializeCoreMod() {
     	"ServerTickListSelfRepair": {
     		'target': {
     			'type': 'METHOD',
-                'class': 'net.minecraft.world.server.ServerTickList',
-                "methodName": "func_205365_a",
+                'class': 'net.minecraft.world.level.ServerTickList',
+                "methodName": "m_47253_",
         		"methodDesc": "()V"
             },
             "transformer": function(methodNode) {
@@ -124,7 +124,7 @@ function initializeCoreMod() {
             	il.add(new VarInsnNode(opcodes.ALOAD, 0));
         		il.add(new MethodInsnNode(opcodes.INVOKESTATIC, 
         				"org/jmt/mcmt/asmdest/ASMHookTerminator", "fixSTL",
-        				"(Lnet/minecraft/world/server/ServerTickList;)V" ,false));
+        				"(Lnet/minecraft/world/level/ServerTickList;)V" ,false));
         		il.add(new JumpInsnNode(opcodes.GOTO, skipTarget));
             	
         		instructions.insertBefore(targetPre, il);
@@ -170,8 +170,8 @@ function initializeCoreMod() {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.world.World',
-                "methodName": "func_175625_s",
-        		"methodDesc": "(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/tileentity/TileEntity;"
+                "methodName": "m_7702_",
+        		"methodDesc": "(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/entity/BlockEntity;"
             },
             "transformer": function(methodNode) {
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
@@ -205,6 +205,7 @@ function initializeCoreMod() {
             	return methodNode;
             }
     	},
+		//TODO FIXME
     	'WorldGetTECraftBukkit': {
             'target': {
                 'type': 'METHOD',

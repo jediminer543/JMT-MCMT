@@ -4,5 +4,7 @@
   "envparallel": "trans/envparallel.js",
   "etpparallel": "trans/etpparallel.js",
   "teparallel": "trans/teparallel.js",
-  "chunkparallel": "trans/chunkparallel.js"
+  "chunkparallel": "trans/chunkparallel.js",
+  "scpcoaccess": "trans/general/scpcoaccess.js",
+  "pscp": "trans/general/pscp.js"
 }
