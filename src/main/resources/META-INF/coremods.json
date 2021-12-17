@@ -6,5 +6,7 @@
   "teparallel": "trans/teparallel.js",
   "chunkparallel": "trans/chunkparallel.js",
   "scpcoaccess": "trans/general/scpcoaccess.js",
+  "generalparallel": "trans/general/generalparallel.js",
+  "gen2parallel": "trans/general/gen2parallel.js",
   "pscp": "trans/general/pscp.js"
 }

@@ -146,9 +146,9 @@ function initializeCoreMod() {
 
             	for (var i in classNode.methods) {
 					
-            		var methodNode = methods[i];
+            		var methodNode = classNode.methods[i];
 
-					if (!method.name.equals("<init>")) {
+					if (!methodNode.name.equals("<init>")) {
             			continue;
             		}
 
@@ -185,9 +185,9 @@ function initializeCoreMod() {
             	
 				for (var i in classNode.methods) {
 					
-            		var methodNode = methods[i];
+            		var methodNode = classNode.methods[i];
 
-					if (!method.name.equals("<init>")) {
+					if (!methodNode.name.equals("<init>")) {
             			continue;
             		}
 

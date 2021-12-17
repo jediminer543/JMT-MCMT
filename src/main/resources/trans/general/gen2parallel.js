@@ -3,13 +3,11 @@ function initializeCoreMod() {
     	'classInheritanceMultiMapList': {
             'target': {
                 'type': 'METHOD',
-                'class': 'net.minecraft.util.ClassInheritanceMultiMap',
+                'class': 'net.minecraft.util.ClassInstanceMultiMap',
                 "methodName": "<init>",
         		"methodDesc": "(Ljava/lang/Class;)V"
             },
             "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] MultiMapList Transformer Called");
-            	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -17,6 +15,8 @@ function initializeCoreMod() {
             	var TypeInsnNode = Java.type("org.objectweb.asm.tree.TypeInsnNode");
             	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
             	var MethodType = asmapi.MethodType;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] MultiMapList Transformer Called");
             	
             	var instructions = methodNode.instructions;
             	            	
@@ -41,7 +41,7 @@ function initializeCoreMod() {
             			"java/util/concurrent/CopyOnWriteArrayList", "<init>", "()V", false));
             	instructions.insert(callTarget, il);
             	
-            	print("[JMTSUPERTRANS] MultiMapList Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] MultiMapList Transformer Complete");
             	
             	return methodNode;
             }
@@ -49,13 +49,11 @@ function initializeCoreMod() {
     	'ClassInheritanceMultiMapMap': {
             'target': {
                 'type': 'METHOD',
-                'class': 'net.minecraft.util.ClassInheritanceMultiMap',
+                'class': 'net.minecraft.util.ClassInstanceMultiMap',
                 "methodName": "<init>",
         		"methodDesc": "(Ljava/lang/Class;)V"
             },
             "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Called");
-            	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -63,6 +61,8 @@ function initializeCoreMod() {
             	var TypeInsnNode = Java.type("org.objectweb.asm.tree.TypeInsnNode");
             	var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
             	var MethodType = asmapi.MethodType;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Called");
             	
             	var instructions = methodNode.instructions;
             	
@@ -88,7 +88,7 @@ function initializeCoreMod() {
             			"java/util/concurrent/ConcurrentHashMap", "<init>", "()V", false));
             	instructions.insert(callTarget, il);
             	
-            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Complete");
             	
             	return methodNode;
             }
@@ -101,7 +101,7 @@ function initializeCoreMod() {
         		"methodDesc": "()V"
             },
             "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] ServerTickListSR Transformer Called");
+            	
             	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
@@ -111,6 +111,8 @@ function initializeCoreMod() {
             	var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
             	var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
             	var MethodType = asmapi.MethodType;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ServerTickListSR Transformer Called");
             	
             	var instructions = methodNode.instructions;
             	
@@ -130,16 +132,17 @@ function initializeCoreMod() {
         		instructions.insertBefore(targetPre, il);
         		instructions.insert(targetPost, skipTarget);
             	
-        		print("[JMTSUPERTRANS] ServerTickListSR Transformer Complete");
+        		asmapi.log("INFO", "[JMTSUPERTRANS] ServerTickListSR Transformer Complete");
         		
         		return methodNode
             }
     	},
+/*
     	'PalettedContainerLock': {
     		'target': {
                 'type': 'METHOD',
-                'class': 'net.minecraft.util.palette.PalettedContainer',
-                "methodName": "func_210459_b",
+                'class': 'net.minecraft.world.level.chunk.PalettedContainer',
+                "methodName": "m_63084_",
         		"methodDesc": "()V"
             },
             "transformer": function(methodNode) {
@@ -166,6 +169,157 @@ function initializeCoreMod() {
             	return methodNode
             }
     	},
+*/
+		/*
+		'PalettedContainerLock': {
+    		'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.world.level.chunk.PalettedContainer',
+                "methodName": "m_63084_",
+        		"methodDesc": "()V"
+            },
+            "transformer": function(methodNode) {
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+				var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+				var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+				
+				asmapi.log("INFO", "[JMTSUPERTRANS] PalettedContainerLock Transformer Called");
+            	
+            	var instructions = methodNode.instructions;
+            	
+            	var il = new InsnList();
+            	//il.add(new VarInsnNode(opcodes.ALOAD, 0));
+				//il.add(new InsnNode(opcodes.MONITORENTER));
+            	//il.add(new MethodInsnNode(opcodes.INVOKEVIRTUAL, 
+        		//		"java/util/concurrent/Semaphore", "acquire",
+        		//		"()Z" ,false));
+				il.add(new InsnNode(opcodes.RETURN));
+            	instructions.insertBefore(instructions.getFirst(), il);
+            	
+            	instructions.insertBefore(target, il);
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] PalettedContainerLock Transformer Complete");
+            	
+            	return methodNode
+            }
+    	},
+		*/
+		'PalettedContainerReLock': {
+    		'target': {
+                'type': 'CLASS',
+                'name': 'net.minecraft.world.level.chunk.PalettedContainer'
+            },
+            "transformer": function(classNode) {
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+				var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+				var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+				var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
+				var LabelNode = Java.type("org.objectweb.asm.tree.LabelNode");
+				var MethodType = asmapi.MethodType;
+				
+				asmapi.log("INFO", "[JMTSUPERTRANS] PalettedContainerReLock Transformer Called");
+            	
+				var methods = classNode.methods;
+            	
+            	var targetMethodLock = asmapi.mapMethod("m_63084_");
+				var targetMethodFree = asmapi.mapMethod("m_63120_"); 
+            	var targetMethodDesc = "()V"; // Remember that these are non static so still eat a ref
+
+				for (var i in methods) {
+            		var method = methods[i];
+
+					if (method.name.equals(targetMethodLock) || method.name.equals(targetMethodFree)) {
+						//don't patch targets'
+						continue;
+					}
+					
+					var instructions = method.instructions;
+					
+					var currentIdx = 0;
+					var lockref = asmapi.findFirstMethodCallAfter(method, MethodType.VIRTUAL, classNode.name, 
+													targetMethodLock, targetMethodDesc, currentIdx);
+					
+					while (lockref != null) {
+						var skipTarget = new LabelNode();
+						var il = new InsnList();
+            			il.add(new VarInsnNode(opcodes.ALOAD, 0));
+						il.add(new InsnNode(opcodes.MONITORENTER));
+						il.add(new JumpInsnNode(opcodes.GOTO, skipTarget));
+						instructions.insertBefore(lockref, il);
+        				instructions.insert(lockref, skipTarget);
+						currentIdx = instructions.indexOf(lockref)+1;
+						lockref = asmapi.findFirstMethodCallAfter(method, MethodType.VIRTUAL, classNode.name, 
+													targetMethodLock, targetMethodDesc, currentIdx);
+					}
+					
+					currentIdx = 0;
+					var freeref = asmapi.findFirstMethodCallAfter(method, MethodType.VIRTUAL, classNode.name, 
+													targetMethodFree, targetMethodDesc, currentIdx);
+													
+					while (freeref != null) {
+						var skipTarget = new LabelNode();
+						var il = new InsnList();
+            			il.add(new VarInsnNode(opcodes.ALOAD, 0));
+						il.add(new InsnNode(opcodes.MONITOREXIT));
+						il.add(new JumpInsnNode(opcodes.GOTO, skipTarget));
+						instructions.insertBefore(freeref, il);
+        				instructions.insert(freeref, skipTarget);
+						currentIdx = instructions.indexOf(freeref)+1;
+						freeref = asmapi.findFirstMethodCallAfter(method, MethodType.VIRTUAL, classNode.name, 
+													targetMethodFree, targetMethodDesc, currentIdx);
+					}
+					
+
+				}
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] PalettedContainerReLock Transformer Complete");
+            	
+            	return classNode;
+            }
+    	},
+		/*
+		'ThreadingDetectorLock': {
+    		'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.util.ThreadingDetector',
+                "methodName": "m_145012_",
+        		"methodDesc": "(Ljava/util/concurrent/Semaphore;Lnet/minecraft/util/DebugBuffer;Ljava/lang/String;)V"
+            },
+            "transformer": function(methodNode) {
+            	
+            	
+            	var opcodes = Java.type('org.objectweb.asm.Opcodes');
+            	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
+            	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
+            	var InsnNode = Java.type("org.objectweb.asm.tree.InsnNode");
+				var VarInsnNode = Java.type("org.objectweb.asm.tree.VarInsnNode");
+				var MethodInsnNode = Java.type("org.objectweb.asm.tree.MethodInsnNode");
+            	//var JumpInsnNode = Java.type("org.objectweb.asm.tree.JumpInsnNode");
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ThreadingDetectorLock Transformer Called");
+            	
+            	var instructions = methodNode.instructions;
+            	
+				var il = new InsnList();
+            	il.add(new VarInsnNode(opcodes.ALOAD, 0));
+            	il.add(new MethodInsnNode(opcodes.INVOKEVIRTUAL, 
+        				"java/util/concurrent/Semaphore", "acquire",
+        				"()Z" ,false));
+				il.add(new InsnNode(opcodes.RETURN));
+            	instructions.insertBefore(instructions.getFirst(), il);
+            	
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ThreadingDetectorLock Transformer Complete");
+            	
+            	return methodNode
+            }
+    	},
+		/**/
     	'WorldGetTE': {
             'target': {
                 'type': 'METHOD',
@@ -206,6 +360,7 @@ function initializeCoreMod() {
             }
     	},
 		//TODO FIXME
+		//#PORTME
     	'WorldGetTECraftBukkit': {
             'target': {
                 'type': 'METHOD',
@@ -264,14 +419,16 @@ function initializeCoreMod() {
     	'ClassInheritanceMultiMapGBC': {
             'target': {
                 'type': 'CLASS',
-                'name': 'net.minecraft.util.ClassInheritanceMultiMap'
+                'name': 'net.minecraft.util.ClassInstanceMultiMap'
             },
             "transformer": function(classNode) {
-            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Called");
+            	
             	
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var MethodType = asmapi.MethodType;
             	
+				asmapi.log("INFO", "[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Called");
+
             	var tgtdesc = "(Ljava/lang/Class;)Ljava/util/List;"
             	
         		var methods = classNode.methods;
@@ -309,7 +466,7 @@ function initializeCoreMod() {
             	
         		}
             		
-            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Complete");
             	
             	return classNode;
             }

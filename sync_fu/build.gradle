@@ -1,0 +1,22 @@
+apply plugin: 'java'
+apply plugin: 'net.minecraftforge.gradle'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(16)
+
+minecraft {
+	mappings channel: 'official', version: "${mc_ver}"
+	runs {
+        client {
+            workingDirectory project.file('run')
+        }
+    }
+	
+}
+repositories {
+        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+dependencies {
+	minecraft "net.minecraftforge:forge:${mc_ver}-${fg_ver}"
+}

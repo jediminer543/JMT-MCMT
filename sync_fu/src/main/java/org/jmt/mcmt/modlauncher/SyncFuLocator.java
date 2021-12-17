@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import net.minecraftforge.fml.loading.moddiscovery.AbstractJarFileLocator;
+//import net.minecraftforge.fml.loading.moddiscovery.AbstractJarFileLocator;
 
 /**
  * Is a full spec'd ModLocater
@@ -32,7 +32,7 @@ import net.minecraftforge.fml.loading.moddiscovery.AbstractJarFileLocator;
  * @since 0.18.60
  *
  */
-public class SyncFuLocator extends AbstractJarFileLocator {
+public class SyncFuLocator {
 
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Marker M_LOCATOR = MarkerManager.getMarker("LOCATE");
@@ -77,15 +77,12 @@ public class SyncFuLocator extends AbstractJarFileLocator {
 	}
 	*/
 
-	@Override
 	public String name() {
 		return "sync_fu_bundle";
 	}
 
-	@Override
 	public void initArguments(Map<String, ?> arguments) {}
 
-	@Override
 	public Stream<Path> scanCandidates() {
 		LOGGER.info(M_LOCATOR, "Prepping locator...");
 		List<Path> out = new ArrayList<>();

@@ -17,13 +17,6 @@ version = "${mcmt_ver}"
 group = 'org.jmt.mcmt' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "jmt_mcmt-${mc_ver}"
 
-sourceSets {
-	syncfu {
-		compileClasspath += sourceSets.main.runtimeClasspath
-		compileClasspath += sourceSets.main.compileClasspath
-	}
-}
-
 // Mojang ships Java 16 to end users in 1.17+ instead of Java 8 in 1.16 or lower, so your mod should target Java 16.
 java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
@@ -68,7 +61,7 @@ minecraft {
                     source sourceSets.main                    
                 }
                 jmt_mcmt_syncfu {
-                	source sourceSets.syncfu
+                	source project(":sync_fu").sourceSets.main
                 }
             }
         }
@@ -93,7 +86,7 @@ minecraft {
                     source sourceSets.main                    
                 }
                 jmt_mcmt_syncfu {
-                	source sourceSets.syncfu
+                	source project(":sync_fu").sourceSets.main
                 }
             }
         }
@@ -121,7 +114,7 @@ minecraft {
                     source sourceSets.main                    
                 }
                 jmt_mcmt_syncfu {
-                	source sourceSets.syncfu
+                	source project(":sync_fu").sourceSets.main
                 }
             }
         }
@@ -178,8 +171,9 @@ jar {
     }
 }
 
+
 task fullJar(type: Jar) {
-	from sourceSets.syncfu.output
+	from files(tasks.getByPath(":sync_fu:compileJava").outputs)
 	from jar.outputs.files
 	dependsOn jar
 } 
@@ -228,6 +222,8 @@ processResources.dependsOn generateModToml
 // Example configuration to allow publishing using the maven-publish plugin
 // This is the preferred method to reobfuscate your jar file
 jar.finalizedBy('reobfJar')
+fullJar.dependsOn('reobfJar')
+fullJar.dependsOn(":sync_fu:compileJava")
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
 // publish.dependsOn('reobfJar')
 

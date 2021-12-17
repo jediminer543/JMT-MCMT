@@ -50,7 +50,7 @@ import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.ITransformerVotingContext;
 import cpw.mods.modlauncher.api.IncompatibleEnvironmentException;
 import cpw.mods.modlauncher.api.TransformerVoteResult;
-import net.minecraftforge.fml.loading.FMLPaths;
+//import net.minecraftforge.fml.loading.FMLPaths;
 
 public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITransformationService {
 
@@ -226,9 +226,11 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 			// Is Dead
 			return out;
 		}
-		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap"));
+		out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap$ValueIterator"));
+		out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap$MapIterator"));
+		out.add(Target.targetClass("it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap"));
 		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$ValueIterator"));
 		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$KeySet"));
 		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$KeyIterator"));
@@ -308,7 +310,8 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 	        Path myPath = Paths.get(uri);
 	        System.out.println(myPath);
 	        Stream<Path> walk = Files.walk(myPath, 1).peek(p -> LOGGER.warn(M_LOCATOR, "Found {}", p)).filter(p -> p.toString().endsWith(".jar"));
-	        Path root = FMLPaths.MODSDIR.get();
+	        //Path root = FMLPaths.MODSDIR.get();
+	        Path root = Paths.get("mods");
 	        for (Iterator<Path> it = walk.iterator(); it.hasNext();){
 	        	Path file = it.next();
 	        	LOGGER.info(M_LOCATOR, "Found target jar: {}", file);
