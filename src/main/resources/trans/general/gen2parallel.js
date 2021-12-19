@@ -7,9 +7,7 @@ function initializeCoreMod() {
                 "methodName": "<init>",
         		"methodDesc": "(Ljava/lang/Class;)V"
             },
-            "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] MultiMapList Transformer Called");
-            	
+            "transformer": function(methodNode) {         	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -19,6 +17,8 @@ function initializeCoreMod() {
             	var MethodType = asmapi.MethodType;
             	
             	var instructions = methodNode.instructions;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] MultiMapList Transformer Called");
             	            	
             	var callMethod = "newArrayList";
         		var callClass = "com/google/common/collect/Lists";
@@ -41,7 +41,7 @@ function initializeCoreMod() {
             			"java/util/concurrent/CopyOnWriteArrayList", "<init>", "()V", false));
             	instructions.insert(callTarget, il);
             	
-            	print("[JMTSUPERTRANS] MultiMapList Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] MultiMapList Transformer Complete");
             	
             	return methodNode;
             }
@@ -53,9 +53,7 @@ function initializeCoreMod() {
                 "methodName": "<init>",
         		"methodDesc": "(Ljava/lang/Class;)V"
             },
-            "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Called");
-            	
+            "transformer": function(methodNode) {           	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -65,6 +63,8 @@ function initializeCoreMod() {
             	var MethodType = asmapi.MethodType;
             	
             	var instructions = methodNode.instructions;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ClassInheritanceMultiMapMap Transformer Called");
             	
             	//com/google/common/collect/Maps.newHashMap()Ljava/util/HashMap;
             	var callMethod = "newHashMap";
@@ -100,9 +100,7 @@ function initializeCoreMod() {
                 "methodName": "func_205365_a",
         		"methodDesc": "()V"
             },
-            "transformer": function(methodNode) {
-            	print("[JMTSUPERTRANS] ServerTickListSR Transformer Called");
-            	
+            "transformer": function(methodNode) {           	
             	var opcodes = Java.type('org.objectweb.asm.Opcodes');
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var InsnList = Java.type("org.objectweb.asm.tree.InsnList");
@@ -113,6 +111,8 @@ function initializeCoreMod() {
             	var MethodType = asmapi.MethodType;
             	
             	var instructions = methodNode.instructions;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ServerTickListSR Transformer Called");
             	
             	var targetPre = asmapi.findFirstInstruction(methodNode, opcodes.NEW);
             	var targetPost = asmapi.findFirstInstruction(methodNode, opcodes.ATHROW);
@@ -130,7 +130,7 @@ function initializeCoreMod() {
         		instructions.insertBefore(targetPre, il);
         		instructions.insert(targetPost, skipTarget);
             	
-        		print("[JMTSUPERTRANS] ServerTickListSR Transformer Complete");
+        		asmapi.log("INFO", "[JMTSUPERTRANS] ServerTickListSR Transformer Complete");
         		
         		return methodNode
             }
@@ -158,7 +158,6 @@ function initializeCoreMod() {
             	var il = new InsnList();
             	il.add(new InsnNode(opcodes.POP));
             	il.add(new JumpInsnNode(opcodes.GOTO, target.label));
-            	
             	instructions.insertBefore(target, il);
             	
             	print("[JMTSUPERTRANS] PalettedContainerLock Transformer Complete");
@@ -266,10 +265,11 @@ function initializeCoreMod() {
                 'name': 'net.minecraft.util.ClassInheritanceMultiMap'
             },
             "transformer": function(classNode) {
-            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Called");
             	
             	var asmapi = Java.type('net.minecraftforge.coremod.api.ASMAPI');
             	var MethodType = asmapi.MethodType;
+
+				asmapi.log("INFO", "[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Called");
             	
             	var tgtdesc = "(Ljava/lang/Class;)Ljava/util/List;"
             	
@@ -308,7 +308,7 @@ function initializeCoreMod() {
             	
         		}
             		
-            	print("[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Complete");
+            	asmapi.log("INFO", "[JMTSUPERTRANS] ClassInheritanceMultiMapGBC Transformer Complete");
             	
             	return classNode;
             }
