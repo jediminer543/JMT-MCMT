@@ -236,7 +236,7 @@ public class FastUtilTransformerService  implements ITransformer<ClassNode>, ITr
 		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$FastEntryIterator"));
 		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$EntryIterator"));
 		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$MapIterator"));
-		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$MapEntryMapEntry"));
+		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap$MapEntry"));
 		out.add(Target.targetClass("it/unimi/dsi/fastutil/longs/Long2ObjectMap$FastEntrySet"));
 		//out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap$MapIterator"));
 		//out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap"));
