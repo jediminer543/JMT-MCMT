@@ -240,7 +240,7 @@ public class ASMHookTerminator {
 				//currentEnts.incrementAndGet();
 				//entityIn.tick();
 				final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
-				currentTEs.incrementAndGet();
+				currentEnts.incrementAndGet();
 				if (filter != null) {
 					filter.serialise(entityIn::tick, entityIn, entityIn.getPosition(), serverworld, SerDesHookTypes.EntityTick);
 				} else {
