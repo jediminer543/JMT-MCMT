@@ -412,7 +412,7 @@ public class ASMHookTerminator {
 	}
 	
 	public static boolean shouldThreadChunks() {
-		return GeneralConfig.disableMultiChunk;
+		return !GeneralConfig.disableMultiChunk;
 	}
 	
 	//Below is debug code for science reasons
