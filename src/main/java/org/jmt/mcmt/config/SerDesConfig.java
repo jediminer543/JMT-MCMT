@@ -148,7 +148,7 @@ public class SerDesConfig {
 	}
 	
 	private static final class ClassListValidator implements Predicate<Object> {
-		String validatorRegex = "^[a-z\\_]+(\\.[a-z0-9\\_]+)*((\\.[A-Z][A-Za-z0-9\\_]+($[A-Za-z0-9\\_]+)*)|\\.\\*|\\.\\*\\*)$";
+		String validatorRegex = "^[a-z\\_]+(\\.[a-z0-9\\_]+)*((\\.[A-Z][A-Za-z0-9\\_]+($[A-Za-z0-9\\_]+)*)?|\\.\*|\\.\\*\\*)\$?([A-Z][A-Za-z0-9\\_]+($[A-Za-z0-9\\_]+)*)+$";
 		@Override
 		public boolean test(Object t) {
 			if (t == null) {
