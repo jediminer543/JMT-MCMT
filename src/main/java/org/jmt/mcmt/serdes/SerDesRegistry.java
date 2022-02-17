@@ -131,7 +131,7 @@ public class SerDesRegistry {
 	}
 	
 	public static ISerDesFilter getFilter(ISerDesHookType isdh, Class<?> clazz) {
-		if (whitelist.getOrDefault(isdh, EMPTYSET).contains(clazz)) {
+		if (!whitelist.getOrDefault(isdh, EMPTYSET).contains(clazz)) {
 			return null;
 		}
 		return optimisedLookup.getOrDefault(isdh, EMPTYMAP).getOrDefault(clazz, DEFAULT_FILTER);
