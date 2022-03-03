@@ -1,0 +1,11 @@
+minecraft {
+	runs {
+        client {
+            workingDirectory project.file('run')
+        }
+    }
+}
+
+jar {
+	classifier "syncfu"
+}

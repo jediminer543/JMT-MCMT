@@ -1,0 +1,75 @@
+buildscript {
+    repositories {
+        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://maven.parchmentmc.org' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath 'org.parchmentmc:librarian:1.+'
+    }
+}
+
+allprojects {
+	apply plugin: 'java'
+	version = "${mcmt_ver}"
+	group = 'org.jmt.mcmt' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+	archivesBaseName = "jmt_mcmt-${mc_ver}"
+
+}
+
+subprojects {
+	apply plugin: 'net.minecraftforge.gradle'
+	apply plugin: 'org.parchmentmc.librarian.forgegradle'
+	// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+	apply plugin: 'eclipse'
+	apply plugin: 'maven-publish'
+
+	
+
+	java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+	
+	minecraft {
+	    // The mappings can be changed at any time and must be in the following format.
+	    // Channel:   Version:
+	    // snapshot   YYYYMMDD   Snapshot are built nightly.
+	    // stable     #          Stables are built at the discretion of the MCP team.
+	    // official   MCVersion  Official field/method names from Mojang mapping files
+	    //
+	    // You must be aware of the Mojang license when using the 'official' mappings.
+	    // See more information here: https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
+	    //
+	    // Use non-default mappings at your own risk. They may not always work.
+	    // Simply re-run your setup task after changing the mappings to update your workspace.
+	    mappings channel: "${mappings_chan}", version: "${mappings_vers}"
+	    
+	    //mappings channel: 'official', version: "${mc_ver}"
+	    //mappings channel: 'parchment', version: '2021.08.15-1.17.1'
+	}
+	
+	dependencies {
+	    // Specify the version of Minecraft to use. If this is any group other than 'net.minecraft', it is assumed
+	    // that the dep is a ForgeGradle 'patcher' dependency, and its patches will be applied.
+	    // The userdev artifact is a special name and will get all sorts of transformations applied to it.
+	    minecraft "net.minecraftforge:forge:${mc_ver}-${fg_ver}"
+	}
+}
+
+jar {
+	classifier "packaged"
+	from zipTree(files(tasks.getByPath(":sync-fu:jar").outputs).first())
+	from files(tasks.getByPath(":forge-mod:jar").outputs)
+} 
+
+jar.dependsOn(':sync-fu:jar')
+jar.dependsOn(':forge-mod:jar')
+
+/*
+configure(fullJar) {   
+	group = 'Build'
+	description = 'Create the full mod'
+}
+
+build.dependsOn fullJar
+*/
