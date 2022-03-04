@@ -199,16 +199,23 @@ public class FastUtilTransformerService implements ITransformer<ClassNode>, ITra
 			try {
 				met.invoke(null, (Object)args);
 			} catch (java.lang.reflect.InvocationTargetException e) {
-				throw e.getCause();
+				//throw e.getCause();
+				e.printStackTrace();
 			}
 			//Configuration bootstrapConfiguration = Launcher.class.getModule().getLayer().configuration();
 			//Configuration rebootstrapConfiguration = 
 			//ModuleClassLoader bootstrapReplacer = new ModuleClassLoader("RE-BOOTSTRAP", rebootstrapConfiguration, List.of(ModuleLayer.boot()));
-			System.exit(0);
+			// BROKEN ON SERVERS 
+			//System.exit(0);
+			// Make thread sit dead
+			//Thread.currentThread().setDaemon(true);
+			Thread.currentThread().setUncaughtExceptionHandler((t, e) -> {});
+			throw new Error("KILLING TO AVOID REBOOT");
 			//BootstrapLauncher.main();
-		} catch (Throwable t) {
+		} catch (Exception t) {
 			t.printStackTrace();
-			System.exit(9001);
+			Thread.currentThread().setUncaughtExceptionHandler((thr, e) -> {});
+			throw new Error("KILLING TO AVOID REBOOT");
 		}
 	}
 	
