@@ -7,29 +7,34 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.datafixers.util.Pair;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.Coordinates;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.server.commands.LocateCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.TickingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.feature.StructureFeature;
+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 
 public class DebugCommands {
 
@@ -124,22 +129,25 @@ public class DebugCommands {
 					BlockPos srcpos = p.blockPosition();
 					UUID id = p.getUUID();
 					int index = structureIdx.computeIfAbsent(id.toString(), (s) -> new AtomicInteger()).getAndIncrement();
-					StructureFeature<?>[] targets = net.minecraftforge.registries.ForgeRegistries.STRUCTURE_FEATURES.getValues().toArray(new StructureFeature<?>[10]);
-					StructureFeature<?> target = null;
-					if (index >= targets.length) {
-						target = targets[0];
+					Registry<ConfiguredStructureFeature<?, ?>> registry = cmdCtx.getSource().getLevel().registryAccess().registryOrThrow(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+					List<Holder.Reference<ConfiguredStructureFeature<?, ?>>> targets = registry.holders().collect(Collectors.toUnmodifiableList());
+					Holder.Reference<ConfiguredStructureFeature<?, ?>> target = null;
+					if (index >= targets.size()) {
+						target = targets.get(0);
 						structureIdx.computeIfAbsent(id.toString(), (s) -> new AtomicInteger()).set(0);
 					} else {
-						target = targets[index];
+						target = targets.get(index);
 					}
-					BlockPos dst = cmdCtx.getSource().getLevel().findNearestMapFeature(target, srcpos, 100, false);
+					Pair<BlockPos, Holder<ConfiguredStructureFeature<?, ?>>> dst = cmdCtx.getSource().getLevel().getChunkSource().getGenerator().findNearestMapFeature(cmdCtx.getSource().getLevel(), HolderSet.direct(target), srcpos, 100, false);
 					if (dst == null) {
-						TextComponent message = new TextComponent("Failed locating " + target.getFeatureName() + " from " + srcpos);
+						TextComponent message = new TextComponent("Failed locating " + target.key().location().toString() + " from " + srcpos);
 						cmdCtx.getSource().sendSuccess(message, true);
 						return 1;
 					}
-					p.teleportTo(dst.getX(), srcpos.getY(), dst.getZ());  
-					LocateCommand.showLocateResult(cmdCtx.getSource(), target.getFeatureName(), srcpos, dst, "commands.locate.success");
+					TextComponent message = new TextComponent("Found target; loading now");
+					cmdCtx.getSource().sendSuccess(message, true);
+					p.teleportTo(dst.getFirst().getX(), srcpos.getY(), dst.getFirst().getZ()); 
+					//LocateCommand.showLocateResult(cmdCtx.getSource(), ResourceOrTagLocationArgument.getStructureFeature(p_207508_, "structure"), srcpos, dst, "commands.locate.success");
 					return 1;
 				})))
 				/* */

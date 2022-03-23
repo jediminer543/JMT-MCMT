@@ -221,7 +221,7 @@ public class FastUtilTransformerService implements ITransformer<ClassNode>, ITra
 	
 	@Override
 	public String name() {
-		return "sync_fu";
+		return "jmt-sync-fu";
 	}
 
 	@Override
@@ -416,7 +416,7 @@ public class FastUtilTransformerService implements ITransformer<ClassNode>, ITra
 		// out.add(Target.targetClass("it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.shorts.ShortOpenHashSet"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.objects.ObjectOpenHashSet"));
-		out.add(Target.targetClass("it.unimi.dsi.fastutil.objects.ObjectOpenHashSet$SetIterator"));
+		//out.add(Target.targetClass("it.unimi.dsi.fastutil.objects.ObjectOpenHashSet$SetIterator"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.objects.ObjectOpenHashSet$SetSpliterator"));
 		out.add(Target.targetClass("it.unimi.dsi.fastutil.objects.ObjectCollections$SizeDecreasingSupplier"));
 		File f = new File("config/jmt_mcmt-sync-fu-list.txt");

@@ -25,12 +25,12 @@ Absurd, likely incompatible with everything, but somehow works
 [[dependencies.jmt_mcmt]] #optional
     modId="forge"
     mandatory=true
-    versionRange="[39,)"
+    versionRange="[40,)"
     ordering="NONE"
     side="SERVER"
 [[dependencies.jmt_mcmt]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.18.1]"
+    versionRange="[1.18.2]"
     ordering="NONE"
     side="SERVER"

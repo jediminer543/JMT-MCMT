@@ -119,9 +119,18 @@ function initializeCoreMod() {
             		var skipTarget2 = new LabelNode();
             		var toSkip = asmapi.findFirstMethodCallAfter(method, MethodType.STATIC, 
             				"net/minecraftforge/event/ForgeEventFactory", "onPostWorldTick", "(Lnet/minecraft/world/level/Level;)V", 0);
+            		var skipPop = 1;
+            		if (toSkip == null) {
+						asmapi.log("INFO", "[JMTSUPERTRANS] World Transformer Sees 1.18.2!!!");
+						toSkip = asmapi.findFirstMethodCallAfter(method, MethodType.STATIC, 
+            				"net/minecraftforge/event/ForgeEventFactory", "onPostWorldTick", "(Lnet/minecraft/world/level/Level;Ljava/util/function/BooleanSupplier;)V", 0);
+        				skipPop = 2;
+					}
             		
             		il = new InsnList();
-            		il.add(new InsnNode(opcodes.POP));
+            		while (skipPop-- > 0) {
+            			il.add(new InsnNode(opcodes.POP));
+            		}
             		il.add(new JumpInsnNode(opcodes.GOTO, skipTarget2));
             		instructions.insertBefore(toSkip, il);
             		instructions.insert(toSkip, skipTarget2);

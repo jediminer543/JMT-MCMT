@@ -27,11 +27,13 @@ minecraft {
             // "REGISTRIES": For firing of registry events.
             // "REGISTRYDUMP": For getting the contents of all registries.
             // property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.markers', 'CLASSDUMP'
 
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            property 'forge.logging.console.level', 'debug'
+            property 'forge.logging.console.level', 'TRACE'
+            //property 'forge.logging.console.level', 'TRACE'
 
             mods {
                 jmt_mcmt {

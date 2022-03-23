@@ -14,10 +14,12 @@ import org.jmt.mcmt.config.GeneralConfig;
 
 import com.mojang.datafixers.util.Either;
 
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.EmptyLevelChunk;
@@ -81,31 +83,10 @@ public class DebugHookTerminator {
 					LOGGER.error("", new TimeoutException("Error fetching chunk " + chunkpos));	
 					bypassLoadTarget = true;
 					if (GeneralConfig.enableTimeoutRegen || GeneralConfig.enableBlankReturn) {
-						
-						// TODO build a 1.15 version of this
 						if (GeneralConfig.enableBlankReturn) {
-							/* 1.16.1 code; AKA the only thing that changed  */
-							// Generate a new empty chunk
-							//Registry<Biome> biomeRegistry = scp.getLevel().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
-							//BiomeSource bp = new FixedBiomeSource(biomeRegistry.byId(0));
-							//LevelChunk out = new LevelChunk(scp.getLevel(), new ChunkPos(chunkpos), 
-							//		new ChunkBiomeContainer(biomeRegistry, null, new ChunkPos(chunkpos), bp));
-							LevelChunk out = new EmptyLevelChunk(scp.getLevel(), new ChunkPos(chunkpos)); 
-							//		new ChunkBiomeContainer(biomeRegistry, null, new ChunkPos(chunkpos), bp));
-							// SCIENCE
+							Registry<Biome> biomeRegistry = scp.getLevel().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
+							LevelChunk out = new EmptyLevelChunk(scp.getLevel(), new ChunkPos(chunkpos), biomeRegistry.getHolder(0).get()); 
 							completableFuture.complete(Either.left(out));
-							/* */
-							/* 1.15.2 code; AKA the only thing that changed  
-							// Generate a new empty chunk
-							// Null is legal here as it's literally not used
-							SingleBiomeProviderSettings sbps = new SingleBiomeProviderSettings(null);
-							sbps.setBiome(Registry.BIOME.getOrDefault(null));
-							BiomeProvider bp = new SingleBiomeProvider(sbps);
-							Chunk out = new Chunk(scp.world, new ChunkPos(chunkpos), 
-									new BiomeContainer(new ChunkPos(chunkpos), bp));
-							// SCIENCE
-							completableFuture.complete(Either.left(out));
-							/* */
 						} else {
 							try {
 								CompoundTag cnbt = scp.chunkMap.readChunk(new ChunkPos(chunkpos));

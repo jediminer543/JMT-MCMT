@@ -136,7 +136,7 @@ public class ASMHookTerminator {
 			} catch (Exception e) {
 				throw e;
 			} finally {
-				net.minecraftforge.event.ForgeEventFactory.onPostWorldTick(serverworld);
+				net.minecraftforge.event.ForgeEventFactory.onPostWorldTick(serverworld,  hasTimeLeft);
 			}
 			return;
 		}
@@ -144,7 +144,7 @@ public class ASMHookTerminator {
 			LOGGER.warn("Multiple servers?");
 			GeneralConfig.disabled = true;
 			serverworld.tick(hasTimeLeft);
-			net.minecraftforge.event.ForgeEventFactory.onPostWorldTick(serverworld);
+			net.minecraftforge.event.ForgeEventFactory.onPostWorldTick(serverworld,  hasTimeLeft);
 			return;
 		} else {
 			String taskName = null;
@@ -160,10 +160,10 @@ public class ASMHookTerminator {
 					serverworld.tick(hasTimeLeft);
 					if (GeneralConfig.disableWorldPostTick) {
 						synchronized (net.minecraftforge.event.ForgeEventFactory.class) {
-							net.minecraftforge.event.ForgeEventFactory.onPostWorldTick(serverworld);
+							net.minecraftforge.event.ForgeEventFactory.onPostWorldTick(serverworld,  hasTimeLeft);
 						}
 					} else {
-						TickEvent.WorldTickEvent event = new TickEvent.WorldTickEvent(LogicalSide.SERVER, TickEvent.Phase.END, serverworld);
+						TickEvent.WorldTickEvent event = new TickEvent.WorldTickEvent(LogicalSide.SERVER, TickEvent.Phase.END, serverworld, hasTimeLeft);
 						ListenerList ll = EventListenerHelper.getListenerList(TickEvent.WorldTickEvent.class);
 						//TODO find better way to locate listeners
 						IEventListener[] listeners = ll.getListeners(0);
