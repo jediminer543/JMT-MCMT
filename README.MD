@@ -60,7 +60,7 @@ All this mod does is parallelize each of these loops. The vast majority of the p
 
 Each one of the above loops is paralelised, and each one is toggleable.
 
-To make this parallelisation work, there are a lot of patches to the Mnecraft core code to avoid concurrent access to non-concurrent objects (curse ye fastutil) or to replace them with a working concurrent alternative.
+To make this parallelisation work, there are a lot of patches to the Minecraft core code to avoid concurrent access to non-concurrent objects (curse ye fastutil) or to replace them with a working concurrent alternative.
 
 Further, this mod adds it's own chunk caching into the mix, in order to provide paralellised access to chunks; this does mean it may consume some more memory though.
 
