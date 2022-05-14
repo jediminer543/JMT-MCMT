@@ -56,7 +56,7 @@ def tick() :
 			tileEntity.tick()
 ```
 
-All this mod does is parallelise each of these loops these loops. The vast majority of the performance (at least in my testing) was gained from parallelising entites.
+All this mod does is parallelize each of these loops. The vast majority of the performance (at least in my testing) was gained from parallelising entites.
 
 Each one of the above loops is paralelised, and each one is toggleable.
 
