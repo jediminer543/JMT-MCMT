@@ -8,6 +8,7 @@ import org.jmt.mcmt.asmdest.ASMHookTerminator;
 import org.jmt.mcmt.commands.ConfigCommand;
 import org.jmt.mcmt.commands.StatsCommand;
 import org.jmt.mcmt.config.GeneralConfig;
+import org.jmt.mcmt.jmx.JMXRegistration;
 import org.jmt.mcmt.serdes.SerDesRegistry;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -46,6 +47,10 @@ public class MCMT
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::processIMC);
         // Register the doClientStuff method for modloading
         //FMLJavaModLoadingContext.get().getModEventBus().addListener(this::doClientStuff);
+        
+        if (System.getProperty("jmt.mcmt.jmx") != null) {
+        	JMXRegistration.register();
+        }
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);

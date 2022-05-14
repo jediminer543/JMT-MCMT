@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 
@@ -14,6 +16,7 @@ import org.jmt.mcmt.config.GeneralConfig;
 
 import com.mojang.datafixers.util.Either;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.MutableRegistry;
@@ -58,6 +61,10 @@ public class DebugHookTerminator {
 			this.maincf = maincf;
 			this.brokecf = brokecf;
 		}
+		public long getChunkPos() {
+			return chunkPos;
+		}
+		
 	}
 	
 	public static List<BrokenChunkLocator> breaks = new ArrayList<>();
@@ -65,22 +72,38 @@ public class DebugHookTerminator {
 	public static boolean isBypassLoadTarget() {
 		return bypassLoadTarget;
 	}
+	
+	public static AtomicBoolean mainThreadChunkLoad = new AtomicBoolean();
+	public static AtomicLong mainThreadChunkLoadCount = new AtomicLong();
+	public static String mainThread = "Server thread";
 		
 	public static void chunkLoadDrive(ServerChunkProvider.ChunkExecutor executor, BooleanSupplier isDone, ServerChunkProvider scp, 
 			CompletableFuture<Either<IChunk, IChunkLoadingError>> completableFuture, long chunkpos) {
+		/*
 		if (!GeneralConfig.enableChunkTimeout) {
 			bypassLoadTarget = false;
 			executor.driveUntil(isDone);
 			return;
 		}
+		*/
 		int failcount = 0;
+		if (Thread.currentThread().getName().equals(mainThread)) {
+			mainThreadChunkLoadCount.set(0);
+			mainThreadChunkLoad.set(true);
+		}
 		while (!isDone.getAsBoolean()) {
 			if (!executor.driveOne()) {
 				if(isDone.getAsBoolean()) {
+					if (Thread.currentThread().getName().equals(mainThread)) {
+						mainThreadChunkLoad.set(false);
+					}
 					break;
 				}
 				// Nothing more to execute
-				if (failcount++ < GeneralConfig.timeoutCount) {
+				if (!GeneralConfig.enableChunkTimeout || failcount++ < GeneralConfig.timeoutCount) {
+					if (Thread.currentThread().getName().equals(mainThread)) {
+						mainThreadChunkLoadCount.incrementAndGet();
+					}
 					Thread.yield();
 					LockSupport.parkNanos("THE END IS ~~NEVER~~ LOADING", 100000L);
 				} else {
