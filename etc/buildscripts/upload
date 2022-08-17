@@ -1,0 +1,6 @@
+#!/bin/bash
+for file in build/libs/*.jar; do 
+	if [[ ${file} != *"-packaged.jar"* ]]; then
+		curl -i -H 'Expect: application/json' -F file=@"$file" -F "payload_json={ \"wait\": true, \"content\": \"Build artefact from $GITHUB_ACTION\", \"username\": \"Github Actions\" }" $DEVEL_WEBHOOK_URL
+	fi
+done

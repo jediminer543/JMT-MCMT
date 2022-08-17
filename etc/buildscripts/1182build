@@ -1,0 +1,1 @@
+./gradlew -Pmc_ver="1.18.2" -Pfg_ver="40.0.18" build
