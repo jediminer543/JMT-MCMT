@@ -56,6 +56,7 @@ public class DebugCommands {
 								StringTextComponent message = new StringTextComponent(
 										"Block at " + bp + " is " + bs.getBlock().getRegistryName() + " has no NBT");
 								cmdCtx.getSource().sendFeedback(message, true);
+								return 1;
 							}
 							CompoundNBT nbt = te.serializeNBT();
 							ITextComponent itc = nbt.toFormattedComponent();
